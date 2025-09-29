@@ -13,13 +13,17 @@
     <link rel="dns-prefetch" href="//fonts.bunny.net">
     <link href="https://fonts.bunny.net/css?family=Nunito" rel="stylesheet">
 
+    <!-- icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" integrity="sha512-iecdLmaskl7CVkqkXNQ/ZH/XLlvWZOJyj7Yy7tcenmpD1ypASozpmT/E0iPtmFIB46ZmdtAc9eNBvH0H/ZpiBw==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+
     <!-- Scripts -->
     @vite(['resources/sass/app.scss', 'resources/js/app.js'])
 </head>
 <body>
     <div id="app">
+        {{-- LA BARRA DE NAVEGACIÓN SUPERIOR SE MANTIENE IGUAL --}}
         <nav class="navbar navbar-expand-md navbar-light bg-white shadow-sm">
-            <div class="container">
+            <div class="container-fluid"> {{-- Usamos container-fluid para que ocupe todo el ancho --}}
                 <a class="navbar-brand" href="{{ url('/') }}">
                     {{ config('app.name', 'Laravel') }}
                 </a>
@@ -37,34 +41,22 @@
                     <ul class="navbar-nav ms-auto">
                         <!-- Authentication Links -->
                         @guest
-                            @if (Route::has('login'))
-                                <li class="nav-item">
-                                    <a class="nav-link" href="{{ route('login') }}">{{ __('Login') }}</a>
-                                </li>
-                            @endif
-
-                            @if (Route::has('register'))
-                                <li class="nav-item">
-                                    <a class="nav-link" href="{{ route('register') }}">{{ __('Register') }}</a>
-                                </li>
-                            @endif
+                            {{-- Este bloque no se mostrará ya que siempre estarás logueado en el panel --}}
                         @else
                             <li class="nav-item dropdown">
                                 <a id="navbarDropdown" class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false" v-pre>
                                     {{ Auth::user()->name }}
-                                    </a>
-                                    
+                                </a>
 
                                 <div class="dropdown-menu dropdown-menu-end" aria-labelledby="navbarDropdown">
-                                    <a class="dropdown-item" href="{{ route('profile.edit') }}">
-                                            {{ __('Mi Perfil') }}
+                                    <a class="dropdown-item" href="{{ route('profile.show') }}">
+                                        {{ __('Mi Perfil') }}
                                     </a>
                                     <a class="dropdown-item" href="{{ route('logout') }}"
                                        onclick="event.preventDefault();
                                                      document.getElementById('logout-form').submit();">
                                         {{ __('Logout') }}
                                     </a>
-
                                     <form id="logout-form" action="{{ route('logout') }}" method="POST" class="d-none">
                                         @csrf
                                     </form>
@@ -76,9 +68,42 @@
             </div>
         </nav>
 
-        <main class="py-4">
-            @yield('content')
-        </main>
+        {{-- INICIO DE LA NUEVA ESTRUCTURA CON SIDEBAR --}}
+        <div class="d-flex body-wrapper">
+            {{-- Columna del Sidebar --}}
+            @auth {{-- Mostramos el sidebar solo si el usuario está autenticado --}}
+            <div class="sidebar vh-100 p-3">
+                <h5 class="text-white">Menú</h5>
+                <hr class="text-white">
+                <ul class="nav flex-column">
+                    <li class="nav-item">
+                        <a class="nav-link text-white" href="{{ route('home') }}">
+                            <i class="fas fa-tachometer-alt fa-fw me-2"></i> Dashboard
+                        </a>
+                    </li>
+                    @if(Auth::user()->role == 'admin')
+                    <li class="nav-item">
+                        <a class="nav-link text-white" href="{{ route('loan-users.index') }}">
+                            <i class="fas fa-users fa-fw me-2"></i> Usuarios de Préstamo
+                        </a>
+                    </li>
+                    @endif
+                    <li class="nav-item">
+                        <a class="nav-link text-white" href="{{ route('profile.show') }}">
+                            <i class="fas fa-user fa-fw me-2"></i> Perfil
+                        </a>
+                    </li>
+                    {{-- Futuros enlaces del menú irán aquí --}}
+                </ul>
+            </div>
+            @endauth
+
+            {{-- Columna del Contenido Principal --}}
+            <main class="py-4 main-content">
+                @yield('content')
+            </main>
+        </div>
+        {{-- FIN DE LA NUEVA ESTRUCTURA --}}
     </div>
 </body>
 </html>

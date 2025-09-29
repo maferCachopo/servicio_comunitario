@@ -6,3 +6,64 @@
 
 // Bootstrap
 @import 'bootstrap/scss/bootstrap';
+/* ========================================= */
+/* ESTILOS PARA EL LAYOUT CON SIDEBAR        */
+/* ========================================= */
+
+/* Hacemos que la estructura principal ocupe toda la altura */
+html, body {
+    height: 100%;
+}
+
+#app {
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh; /* Usa min-height para mejor flexibilidad */
+}
+
+/* Contenedor que envuelve el sidebar y el contenido principal */
+.body-wrapper {
+    display: flex;
+    flex: 1; /* Permite que este contenedor crezca y ocupe el espacio vertical */
+}
+
+/* Estilos para el Sidebar */
+.sidebar {
+    width: 250px;           /* Ancho fijo del sidebar */
+    background-color: #212529; /* Un color oscuro */
+    flex-shrink: 0;         /* Evita que el sidebar se encoja */
+    overflow-y: auto;       /* Añade scroll si los enlaces son muchos */
+}
+
+.sidebar .nav-link {
+    transition: background-color 0.2s; /* Transición suave */
+}
+
+.sidebar .nav-link:hover {
+    background-color: #343a40; /* Un gris un poco más claro para el efecto hover */
+    border-radius: 5px;
+}
+
+/* Estilos para el Contenido Principal */
+.main-content {
+    flex-grow: 1;         /* Hace que ocupe todo el espacio restante */
+    overflow-y: auto;     /* Permite scroll si el contenido es largo */
+    padding: 2rem;        /* Un buen padding interno */
+}
+
+/* Estilos para la página de perfil estático */
+.profile-picture-circle {
+    width: 80px;
+    height: 80px;
+    border-radius: 50%; /* La magia para hacerlo circular */
+    object-fit: cover;   /* Evita que la imagen se deforme */
+    border: 3px solid #dee2e6; /* Un borde sutil */
+}
+
+/* Estilos para el ícono por defecto si no hay foto */
+.default-profile-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: #f8f9fa;
+}

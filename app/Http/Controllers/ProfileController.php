@@ -11,6 +11,14 @@ use Illuminate\Support\Facades\Storage;
 class ProfileController extends Controller
 {
     /**
+     * Muestra el perfil del usuario.
+     */
+    public function show(){
+        return view('profile.show', [
+            'user' => Auth::user()
+        ]);
+    }
+    /**
      * Muestra el formulario para editar el perfil del usuario autenticado.
      */
     public function edit()

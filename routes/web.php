@@ -2,6 +2,7 @@
 
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\LoanUserController;
 
 Route::get('/', function () {
      return redirect()->route('login');
@@ -11,8 +12,20 @@ Route::get('/', function () {
 Auth::routes(['register' => false, 'reset' => false]);
 
 Route::middleware('auth')->group(function () {
-    Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
+    
+    // RUTA PARA VER EL PERFIL (Esta ya la arreglaste)
+    Route::get('/profile', [ProfileController::class, 'show'])->name('profile.show');
+
+    // RUTA PARA EDITAR EL PERFIL (Esta es la que está causando el error ahora)
+    // ASEGÚRATE DE QUE ESTA LÍNEA EXISTA Y TENGA ->name('profile.edit')
+    Route::get('/profile/edit', [ProfileController::class, 'edit'])->name('profile.edit');
+
+    // RUTA PARA ACTUALIZAR (Esta no ha cambiado)
     Route::put('/profile', [ProfileController::class, 'update'])->name('profile.update');
+
+     Route::resource('loan-users', LoanUserController::class)->middleware('admin');
+
 });
+
 
 Route::get('/home', [App\Http\Controllers\HomeController::class, 'index'])->name('home');
