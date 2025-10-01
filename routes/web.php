@@ -28,6 +28,8 @@ Route::middleware('auth')->group(function () {
 
      // RUTA PARA INVENTARIO (solo admin)
      Route::get('/inventory', [InventoryController::class, 'index'])->name('inventory.index')->middleware('admin');
+     Route::get('/inventory/partituras-data', [InventoryController::class, 'getPartiturasData'])->name('inventory.partituras.data')->middleware('admin');
+     Route::get('/inventory/prestamos-data', [InventoryController::class, 'getPrestamosData'])->name('inventory.prestamos.data')->middleware('admin');
 
 });
 

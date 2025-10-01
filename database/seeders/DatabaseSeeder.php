@@ -17,7 +17,7 @@ class DatabaseSeeder extends Seeder
 
         $this->call([
             AdminUserSeeder::class,
-            // Otros seeders que puedas tener
+            InventorySeeder::class,
         ]);
     }
 }

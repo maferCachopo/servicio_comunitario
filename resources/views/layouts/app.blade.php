@@ -18,6 +18,9 @@
 
     <!-- Scripts -->
     @vite(['resources/sass/app.scss', 'resources/js/app.js'])
+    
+    <!-- DataTables CSS -->
+    @stack('styles')
 </head>
 <body>
     <div id="app">
@@ -110,5 +113,8 @@
         </div>
         {{-- FIN DE LA NUEVA ESTRUCTURA --}}
     </div>
+    
+    <!-- DataTables JS -->
+    @stack('scripts')
 </body>
 </html>
