@@ -46,7 +46,7 @@ class LoanUserController extends Controller
         ]);
 
         // 3. Redirigir a la lista con un mensaje de éxito
-        return redirect()->route('loan_users.index')
+        return redirect()->route('loan-users.index')
                          ->with('success', 'Usuario de préstamo creado con éxito.');
     }
 }
