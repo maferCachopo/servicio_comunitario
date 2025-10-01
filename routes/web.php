@@ -3,6 +3,7 @@
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\LoanUserController;
+use App\Http\Controllers\InventoryController;
 
 Route::get('/', function () {
      return redirect()->route('login');
@@ -24,6 +25,9 @@ Route::middleware('auth')->group(function () {
     Route::put('/profile', [ProfileController::class, 'update'])->name('profile.update');
 
      Route::resource('loan-users', LoanUserController::class)->middleware('admin');
+
+     // RUTA PARA INVENTARIO (solo admin)
+     Route::get('/inventory', [InventoryController::class, 'index'])->name('inventory.index')->middleware('admin');
 
 });
 

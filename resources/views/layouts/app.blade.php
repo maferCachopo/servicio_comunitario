@@ -87,6 +87,11 @@
                             <i class="fas fa-users fa-fw me-2"></i> Usuarios de Préstamo
                         </a>
                     </li>
+                    <li class="nav-item">
+                        <a class="nav-link text-white" href="{{ route('inventory.index') }}">
+                            <i class="fas fa-boxes fa-fw me-2"></i> Inventario
+                        </a>
+                    </li>
                     @endif
                     <li class="nav-item">
                         <a class="nav-link text-white" href="{{ route('profile.show') }}">
