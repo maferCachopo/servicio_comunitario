@@ -181,4 +181,120 @@ class InventoryController extends Controller
             'data' => $data
         ]);
     }
+
+    /**
+     * API: Get pending loan requests for admin
+     */
+    public function prestamosPendientes()
+    {
+        try {
+            $prestamos = Prestamo::with(['partitura.autor', 'user'])
+                ->where('estado', 'Pendiente')
+                ->orderBy('created_at', 'desc')
+                ->get()
+                ->map(function($prestamo) {
+                    return [
+                        'id' => $prestamo->id,
+                        'usuario' => [
+                            'id' => $prestamo->user->id,
+                            'nombre' => $prestamo->user->name,
+                            'email' => $prestamo->user->email
+                        ],
+                        'partitura' => [
+                            'id' => $prestamo->partitura->id,
+                            'titulo' => $prestamo->partitura->titulo,
+                            'autor' => $prestamo->partitura->autor->nombre ?? 'Autor desconocido'
+                        ],
+                        'instrumento' => $prestamo->instrumento,
+                        'cantidad' => $prestamo->cantidad,
+                        'fecha_solicitud' => $prestamo->fecha_solicitud,
+                        'created_at' => $prestamo->created_at
+                    ];
+                });
+            
+            return response()->json([
+                'success' => true,
+                'prestamos' => $prestamos
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al cargar préstamos pendientes'
+            ], 500);
+        }
+    }
+
+    /**
+     * API: Process loan request (approve/reject)
+     */
+    public function procesarPrestamo(Request $request, $id)
+    {
+        try {
+            $request->validate([
+                'accion' => 'required|in:aceptar,rechazar'
+            ]);
+
+            $prestamo = Prestamo::with(['partitura', 'user'])->findOrFail($id);
+            
+            // Check if already processed
+            if ($prestamo->estado !== 'Pendiente') {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Esta solicitud ya fue procesada'
+                ], 400);
+            }
+
+            $accion = $request->accion;
+            $prestamo->estado = $accion === 'aceptar' ? 'Aceptado' : 'Rechazado';
+            $prestamo->fecha_respuesta = now();
+            $prestamo->save();
+
+            // If approved, update inventory
+            if ($accion === 'aceptar') {
+                $inventario = Inventario::where('partitura_id', $prestamo->partitura_id)
+                    ->where('instrumento', $prestamo->instrumento)
+                    ->first();
+                
+                if ($inventario && $inventario->cantidad_disponible >= $prestamo->cantidad) {
+                    $inventario->cantidad_disponible -= $prestamo->cantidad;
+                    $inventario->save();
+                } else {
+                    // Rollback if not enough stock
+                    $prestamo->estado = 'Pendiente';
+                    $prestamo->fecha_respuesta = null;
+                    $prestamo->save();
+                    
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Stock insuficiente al momento de procesar'
+                    ], 400);
+                }
+            }
+
+            // Here you would typically send notifications
+            // For now, we'll just return success
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Solicitud ' . ($accion === 'aceptar' ? 'aceptada' : 'rechazada') . ' exitosamente',
+                'prestamo' => [
+                    'id' => $prestamo->id,
+                    'estado' => $prestamo->estado,
+                    'fecha_respuesta' => $prestamo->fecha_respuesta
+                ]
+            ]);
+
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Datos de entrada inválidos',
+                'errors' => $e->errors()
+            ], 422);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al procesar la solicitud'
+            ], 500);
+        }
+    }
 }

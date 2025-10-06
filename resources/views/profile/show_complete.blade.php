@@ -54,5 +54,5 @@
 </div>
 @endsection
 
-{{-- Perfil de Usuario - Vista exclusiva para mostrar información del usuario logueado --}}
-{{-- Esta vista renderiza exclusivamente la información del usuario sin elementos adicionales --}}
+{{-- Perfil de Usuario - Vista completa con información del usuario logueado --}}
+{{-- Esta vista renderiza exclusivamente la información del usuario sin elementos de préstamo --}}

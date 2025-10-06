@@ -14,7 +14,15 @@
                         </div>
                     @endif
 
-                    {{ __('You are logged in!') }}
+                    {{-- Mensaje de autenticación activa para usuarios loan_user --}}
+                    @if(Auth::check() && Auth::user()->role == 'loan_user')
+                        <div class="alert alert-info" role="alert">
+                            <i class="fas fa-check-circle me-2"></i>
+                            {{ __('Autenticación activa - Usuario de préstamo conectado') }}
+                        </div>
+                    @else
+                        {{ __('You are logged in!') }}
+                    @endif
                 </div>
             </div>
         </div>

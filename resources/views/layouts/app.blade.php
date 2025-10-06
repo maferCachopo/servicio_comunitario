@@ -86,7 +86,7 @@
                     </li>
                     @if(Auth::user()->role == 'admin')
                     <li class="nav-item">
-                        <a class="nav-link text-white" href="{{ route('loan-users.index') }}">
+                        <a class="nav-link text-white" href="{{ route('loan_users.index') }}">
                             <i class="fas fa-users fa-fw me-2"></i> Usuarios de Préstamo
                         </a>
                     </li>
@@ -101,6 +101,14 @@
                             <i class="fas fa-user fa-fw me-2"></i> Perfil
                         </a>
                     </li>
+                    {{-- Enlace de Préstamo de Partituras - Solo para usuarios loan_user --}}
+                    @if(Auth::check() && Auth::user()->role == 'loan_user')
+                    <li class="nav-item">
+                        <a class="nav-link text-white" href="{{ route('loan.request') }}">
+                            <i class="fas fa-music fa-fw me-2"></i> Préstamo de Partituras
+                        </a>
+                    </li>
+                    @endif
                     {{-- Futuros enlaces del menú irán aquí --}}
                 </ul>
             </div>
@@ -109,6 +117,9 @@
             {{-- Columna del Contenido Principal --}}
             <main class="py-4 main-content">
                 @yield('content')
+                
+                {{-- Contenido principal sin secciones adicionales --}}
+                {{-- Cada vista carga exclusivamente su componente correspondiente --}}
             </main>
         </div>
         {{-- FIN DE LA NUEVA ESTRUCTURA --}}

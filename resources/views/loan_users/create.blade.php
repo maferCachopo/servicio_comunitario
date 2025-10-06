@@ -8,7 +8,7 @@
                 <div class="card-header">Crear Nuevo Usuario de Préstamo</div>
 
                 <div class="card-body">
-                    <form method="POST" action="{{ route('loan-users.store') }}">
+                    <form method="POST" action="{{ route('loan_users.store') }}">
                         @csrf
 
                         <div class="row mb-3">
@@ -45,7 +45,7 @@
                         <div class="row mb-0">
                             <div class="col-md-6 offset-md-4">
                                 <button type="submit" class="btn btn-primary">Crear Usuario</button>
-                                <a href="{{ route('loan-users.index') }}" class="btn btn-secondary">Cancelar</a>
+                                <a href="{{ route('loan_users.index') }}" class="btn btn-secondary">Cancelar</a>
                             </div>
                         </div>
                     </form>

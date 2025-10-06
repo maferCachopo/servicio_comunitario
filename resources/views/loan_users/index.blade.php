@@ -6,7 +6,7 @@
         <div class="col-md-12">
             <div class="d-flex justify-content-between align-items-center mb-3">
                 <h1>Usuarios de Préstamo</h1>
-                <a href="{{ route('loan-users.create') }}" class="btn btn-primary">
+                <a href="{{ route('loan_users.create') }}" class="btn btn-primary">
                     <i class="fas fa-plus me-1"></i> Crear Nuevo Usuario
                 </a>
             </div>
