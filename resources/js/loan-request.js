@@ -1,10 +1,14 @@
+const baselink = 'http://127.0.0.1:8000';
 class LoanRequestManager {
+
     constructor() {
+         console.log('antes del fetch');
         this.availablePartituras = [];
         this.currentSelection = {
             partitura: null,
             instrumento: null,
             cantidad: 1
+            
         };
         
         this.init();
@@ -78,19 +82,25 @@ class LoanRequestManager {
         
         // Ensure modal can be closed during loading by enabling backdrop and keyboard
         this.enableModalInteraction(true);
+
+         
         
         try {
             // Add timeout to prevent indefinite loading
             const controller = new AbortController();
             const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
             
-            const response = await fetch('/api/partituras-disponibles', {
+            
+
+            const response = await fetch(`${baselink}/api/partituras-disponibles`, {
                 signal: controller.signal,
                 headers: {
                     'Accept': 'application/json',
                     'X-Requested-With': 'XMLHttpRequest'
                 }
             });
+
+            console.log(response);
             
             clearTimeout(timeoutId);
             
@@ -328,7 +338,7 @@ class LoanRequestManager {
         }
 
         try {
-            const response = await fetch('/api/solicitar-prestamo', {
+            const response = await fetch(`${baselink}/api/solicitar-prestamo`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -363,7 +373,7 @@ class LoanRequestManager {
 
     async loadUserLoanHistory() {
         try {
-            const response = await fetch('/api/mis-prestamos');
+            const response = await fetch(`${baselink}/api/mis-prestamos`);
             const data = await response.json();
             
             if (data.success !== false) {
@@ -482,6 +492,12 @@ class LoanRequestManager {
                 modal._config.keyboard = false;
             }
         }
+        
+        // Fix ARIA attributes to prevent focus issues
+        if (enable) {
+            modalElement.removeAttribute('aria-hidden');
+            modalElement.removeAttribute('inert');
+        }
     }
 
     handleLoadingError(message) {
@@ -585,9 +601,10 @@ class LoanRequestManager {
             if (!this.isLoading) {
                 const closeButton = modalElement.querySelector('.btn-close');
                 if (closeButton) {
-                    setTimeout(() => {
+                    // Use requestAnimationFrame for better timing
+                    requestAnimationFrame(() => {
                         closeButton.focus();
-                    }, 100);
+                    });
                 }
             }
         }
@@ -604,9 +621,9 @@ class LoanRequestManager {
         // Return focus to the element that triggered the modal
         const triggerElement = document.querySelector('[data-bs-target="#loanRequestModal"], [href="#loanRequestModal"]');
         if (triggerElement) {
-            setTimeout(() => {
+            requestAnimationFrame(() => {
                 triggerElement.focus();
-            }, 100);
+            });
         }
     }
 
@@ -633,15 +650,20 @@ class LoanRequestManager {
                     modal._config.keyboard = true;
                 }
                 
+                // Hide the modal
                 modal.hide();
                 
                 // Restore original configuration
                 modal._config.backdrop = originalBackdrop;
                 modal._config.keyboard = originalKeyboard;
             } else {
-                // Fallback: manually trigger hide
-                const closeEvent = new Event('hide.bs.modal');
-                modalElement.dispatchEvent(closeEvent);
+                // Fallback: manually trigger hide if modal instance doesn't exist
+                try {
+                    const newModal = new bootstrap.Modal(modalElement);
+                    newModal.hide();
+                } catch (error) {
+                    console.warn('Could not create or hide modal:', error);
+                }
             }
         }
     }

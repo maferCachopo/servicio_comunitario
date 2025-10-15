@@ -46,15 +46,20 @@
 @endsection
 
 @push('scripts')
+
+{{-- 1. Carga el archivo JS que define LoanRequestManager usando Vite --}}
+@vite('resources/js/loan-request.js')
+
+{{-- 2. Tu script que inicializa la clase (ahora sí la encontrará) --}}
 <script>
 // Initialize loan request functionality when DOM is ready
 document.addEventListener('DOMContentLoaded', function() {
     if (typeof LoanRequestManager !== 'undefined') {
         new LoanRequestManager();
+    } else {
+        // Este mensaje te ayudará a depurar si algo no funciona
+        console.error('La clase LoanRequestManager no está definida. Asegúrate de que "npm run dev" esté en ejecución y que el archivo esté configurado en vite.config.js.');
     }
 });
 </script>
 @endpush
-
-{{-- Vista exclusiva de Préstamo de Partituras para usuarios loan_user --}}
-{{-- Esta vista habilita únicamente el acceso al formulario de solicitud de préstamo --}}
