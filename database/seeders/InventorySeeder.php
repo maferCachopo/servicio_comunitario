@@ -101,11 +101,11 @@ class InventorySeeder extends Seeder
 
         // 7. Crear Inventarios (5)
         $inventarios = [
-            ['partitura_id' => 1, 'estante_id' => 1, 'cantidad' => 5, 'cantidad_disponible' => 3, 'estado' => 'disponible', 'notas' => 'Partituras en buen estado'],
-            ['partitura_id' => 2, 'estante_id' => 4, 'cantidad' => 3, 'cantidad_disponible' => 2, 'estado' => 'disponible', 'notas' => 'Edición especial'],
-            ['partitura_id' => 3, 'estante_id' => 3, 'cantidad' => 2, 'cantidad_disponible' => 1, 'estado' => 'disponible', 'notas' => 'Edición crítica'],
-            ['partitura_id' => 4, 'estante_id' => 5, 'cantidad' => 8, 'cantidad_disponible' => 5, 'estado' => 'disponible', 'notas' => 'Partituras populares'],
-            ['partitura_id' => 5, 'estante_id' => 2, 'cantidad' => 4, 'cantidad_disponible' => 2, 'estado' => 'disponible', 'notas' => 'Incluye partes separadas'],
+            ['partitura_id' => 1, 'estante_id' => 1, 'instrumento' => 'Orquesta', 'cantidad' => 5, 'cantidad_disponible' => 3, 'estado' => 'disponible', 'notas' => 'Partituras en buen estado'],
+            ['partitura_id' => 2, 'estante_id' => 4, 'instrumento' => 'Piano', 'cantidad' => 3, 'cantidad_disponible' => 2, 'estado' => 'disponible', 'notas' => 'Edición especial'],
+            ['partitura_id' => 3, 'estante_id' => 3, 'instrumento' => 'Órgano', 'cantidad' => 2, 'cantidad_disponible' => 1, 'estado' => 'disponible', 'notas' => 'Edición crítica'],
+            ['partitura_id' => 4, 'estante_id' => 5, 'instrumento' => 'Piano', 'cantidad' => 8, 'cantidad_disponible' => 5, 'estado' => 'disponible', 'notas' => 'Partituras populares'],
+            ['partitura_id' => 5, 'estante_id' => 2, 'instrumento' => 'Violín', 'cantidad' => 4, 'cantidad_disponible' => 2, 'estado' => 'disponible', 'notas' => 'Incluye partes separadas'],
         ];
 
         foreach ($inventarios as $inventario) {

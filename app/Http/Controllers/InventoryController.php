@@ -28,68 +28,93 @@ class InventoryController extends Controller
      */
     public function getPartiturasData(Request $request)
     {
-        $query = Obra::with(['contribuciones.autor', 'contribuciones.tipoContribucion', 'partituras.inventarios.estante'])
-            ->select('obras.*');
+        // Query to get all inventarios with their related data, showing multiple instrumentations per score
+        $query = Inventario::with(['partitura.obra.contribuciones.autor', 'partitura.obra.contribuciones.tipoContribucion', 'estante'])
+            ->select('inventarios.*')
+            ->whereHas('partitura.obra')
+            ->where('cantidad', '>', 0);
 
         // Búsqueda global
         if ($request->has('search') && $request->search['value']) {
             $search = $request->search['value'];
             $query->where(function($q) use ($search) {
-                $q->where('obras.titulo', 'like', "%{$search}%")
-                  ->orWhere('obras.anio', 'like', "%{$search}%")
-                  ->orWhereHas('contribuciones.autor', function($q) use ($search) {
+                // Search in obra data
+                $q->whereHas('partitura.obra', function($q) use ($search) {
+                    $q->where('titulo', 'like', "%{$search}%")
+                      ->orWhere('anio', 'like', "%{$search}%");
+                })
+                  ->orWhereHas('partitura.obra.contribuciones.autor', function($q) use ($search) {
                       $q->where('nombre', 'like', "%{$search}%")
                         ->orWhere('apellido', 'like', "%{$search}%");
                   })
-                  ->orWhereHas('contribuciones.tipoContribucion', function($q) use ($search) {
+                  ->orWhereHas('partitura.obra.contribuciones.tipoContribucion', function($q) use ($search) {
                       $q->where('nombre_contribucion', 'like', "%{$search}%");
+                  })
+                  ->orWhere('instrumento', 'like', "%{$search}%")
+                  ->orWhereHas('estante', function($q) use ($search) {
+                      $q->where('gaveta', 'like', "%{$search}%");
                   });
             });
         }
 
         // Ordenamiento
         if ($request->has('order')) {
-            $columns = ['titulo', 'autor', 'tipo_contribucion', 'anio', 'cantidad', 'gaveta'];
+            $columns = ['titulo', 'autor', 'tipo_contribucion', 'anio', 'instrumento', 'cantidad', 'gaveta'];
             $column = $columns[$request->order[0]['column']] ?? 'titulo';
             $direction = $request->order[0]['dir'] ?? 'asc';
             
             if ($column === 'autor') {
-                $query->join('contribuciones', 'obras.id', '=', 'contribuciones.obra_id')
+                $query->join('partituras', 'inventarios.partitura_id', '=', 'partituras.id')
+                      ->join('obras', 'partituras.obra_id', '=', 'obras.id')
+                      ->join('contribuciones', 'obras.id', '=', 'contribuciones.obra_id')
                       ->join('autores', 'contribuciones.autor_id', '=', 'autores.id')
                       ->orderBy('autores.nombre', $direction)
-                      ->select('obras.*');
+                      ->select('inventarios.*');
             } elseif ($column === 'tipo_contribucion') {
-                $query->join('contribuciones', 'obras.id', '=', 'contribuciones.obra_id')
+                $query->join('partituras', 'inventarios.partitura_id', '=', 'partituras.id')
+                      ->join('obras', 'partituras.obra_id', '=', 'obras.id')
+                      ->join('contribuciones', 'obras.id', '=', 'contribuciones.obra_id')
                       ->join('tipo_contribuciones', 'contribuciones.tipo_contribucion_id', '=', 'tipo_contribuciones.id')
                       ->orderBy('tipo_contribuciones.nombre_contribucion', $direction)
-                      ->select('obras.*');
+                      ->select('inventarios.*');
+            } elseif ($column === 'titulo' || $column === 'anio') {
+                $query->join('partituras', 'inventarios.partitura_id', '=', 'partituras.id')
+                      ->join('obras', 'partituras.obra_id', '=', 'obras.id')
+                      ->orderBy("obras.$column", $direction)
+                      ->select('inventarios.*');
+            } elseif ($column === 'gaveta') {
+                $query->join('estantes', 'inventarios.estante_id', '=', 'estantes.id')
+                      ->orderBy('estantes.gaveta', $direction)
+                      ->select('inventarios.*');
             } else {
                 $query->orderBy($column, $direction);
             }
         }
 
-        $totalRecords = Obra::count();
+        $totalRecords = Inventario::where('cantidad', '>', 0)->count();
         $filteredRecords = $query->count();
 
         // Paginación
-        $partituras = $query->skip($request->start ?? 0)
+        $inventarios = $query->skip($request->start ?? 0)
             ->take($request->length ?? 10)
             ->get();
 
-        // Formatear datos para DataTables
+        // Formatear datos para DataTables - now showing multiple instrumentations per score
         $data = [];
-        foreach ($partituras as $obra) {
+        foreach ($inventarios as $inventario) {
+            $obra = $inventario->partitura->obra;
             $autor = $obra->contribuciones->first()->autor ?? null;
             $tipoContribucion = $obra->contribuciones->first()->tipoContribucion ?? null;
-            $inventario = $obra->partituras->first()->inventarios->first() ?? null;
             
             $data[] = [
                 'titulo' => $obra->titulo,
                 'autor' => $autor ? $autor->nombre . ' ' . $autor->apellido : 'N/A',
                 'tipo_contribucion' => $tipoContribucion ? $tipoContribucion->nombre_contribucion : 'N/A',
                 'anio' => $obra->anio,
-                'cantidad' => $inventario ? $inventario->cantidad : 0,
-                'gaveta' => $inventario && $inventario->estante ? $inventario->estante->gaveta : 'N/A',
+                'instrumento' => $inventario->instrumento ?? 'N/A',
+                'cantidad' => $inventario->cantidad,
+                'cantidad_disponible' => $inventario->cantidad_disponible,
+                'gaveta' => $inventario->estante ? $inventario->estante->gaveta : 'N/A',
                 'acciones' => '<button class="btn btn-sm btn-secondary" disabled>Acciones</button>'
             ];
         }
@@ -128,7 +153,7 @@ class InventoryController extends Controller
 
         // Ordenamiento
         if ($request->has('order')) {
-            $columns = ['id', 'obra_titulo', 'usuario_nombre', 'usuario_email', 'fecha_prestamo', 'descripcion'];
+            $columns = ['id', 'obra_titulo', 'instrumento', 'usuario_nombre', 'usuario_email', 'fecha_prestamo', 'descripcion'];
             $column = $columns[$request->order[0]['column']] ?? 'id';
             $direction = $request->order[0]['dir'] ?? 'asc';
             
@@ -137,6 +162,10 @@ class InventoryController extends Controller
                       ->join('partituras', 'inventarios.partitura_id', '=', 'partituras.id')
                       ->join('obras', 'partituras.obra_id', '=', 'obras.id')
                       ->orderBy('obras.titulo', $direction)
+                      ->select('prestamos.*');
+            } elseif ($column === 'instrumento') {
+                $query->join('inventarios', 'prestamos.inventario_id', '=', 'inventarios.id')
+                      ->orderBy('inventarios.instrumento', $direction)
                       ->select('prestamos.*');
             } elseif ($column === 'usuario_nombre' || $column === 'usuario_email') {
                 $query->join('users', 'prestamos.user_id', '=', 'users.id')
@@ -161,12 +190,14 @@ class InventoryController extends Controller
             $obraTitulo = $prestamo->inventario->partitura->obra->titulo ?? 'N/A';
             $usuarioNombre = $prestamo->user->name ?? 'N/A';
             $usuarioEmail = $prestamo->user->email ?? 'N/A';
+            $instrumento = $prestamo->inventario->instrumento ?? 'N/A';
             
             $data[] = [
                 'id' => $prestamo->id,
                 'obra_titulo' => $obraTitulo,
                 'usuario_nombre' => $usuarioNombre,
                 'usuario_email' => $usuarioEmail,
+                'instrumento' => $instrumento,
                 'fecha_prestamo' => \Carbon\Carbon::parse($prestamo->fecha_prestamo)->format('d/m/Y H:i'),
                 'fecha_devolucion' => $prestamo->fecha_devolucion ? \Carbon\Carbon::parse($prestamo->fecha_devolucion)->format('d/m/Y H:i') : 'No devuelto',
                 'estado' => ucfirst($prestamo->estado),
@@ -188,11 +219,22 @@ class InventoryController extends Controller
     public function prestamosPendientes()
     {
         try {
-            $prestamos = Prestamo::with(['partitura.autor', 'user'])
+            $prestamos = Prestamo::with(['inventario.partitura.obra.contribuciones.autor', 'user'])
                 ->where('estado', 'Pendiente')
                 ->orderBy('created_at', 'desc')
                 ->get()
                 ->map(function($prestamo) {
+                    // Get autor from obra -> contribuciones -> autor
+                    $autor = 'Autor desconocido';
+                    if ($prestamo->inventario && $prestamo->inventario->partitura &&
+                        $prestamo->inventario->partitura->obra &&
+                        $prestamo->inventario->partitura->obra->contribuciones->isNotEmpty()) {
+                        $firstContribucion = $prestamo->inventario->partitura->obra->contribuciones->first();
+                        if ($firstContribucion && $firstContribucion->autor) {
+                            $autor = $firstContribucion->autor->nombre . ' ' . $firstContribucion->autor->apellido;
+                        }
+                    }
+                    
                     return [
                         'id' => $prestamo->id,
                         'usuario' => [
@@ -201,11 +243,11 @@ class InventoryController extends Controller
                             'email' => $prestamo->user->email
                         ],
                         'partitura' => [
-                            'id' => $prestamo->partitura->id,
-                            'titulo' => $prestamo->partitura->titulo,
-                            'autor' => $prestamo->partitura->autor->nombre ?? 'Autor desconocido'
+                            'id' => $prestamo->inventario->partitura->id ?? null,
+                            'titulo' => $prestamo->inventario->partitura->obra->titulo ?? 'Título desconocido',
+                            'autor' => $autor
                         ],
-                        'instrumento' => $prestamo->instrumento,
+                        'instrumento' => $prestamo->inventario->instrumento ?? 'Instrumento desconocido',
                         'cantidad' => $prestamo->cantidad,
                         'fecha_solicitud' => $prestamo->fecha_solicitud,
                         'created_at' => $prestamo->created_at
@@ -251,9 +293,7 @@ class InventoryController extends Controller
 
             // If approved, update inventory
             if ($accion === 'aceptar') {
-                $inventario = Inventario::where('partitura_id', $prestamo->partitura_id)
-                    ->where('instrumento', $prestamo->instrumento)
-                    ->first();
+                $inventario = $prestamo->inventario;
                 
                 if ($inventario && $inventario->cantidad_disponible >= $prestamo->cantidad) {
                     $inventario->cantidad_disponible -= $prestamo->cantidad;

@@ -12,6 +12,7 @@ class Inventario extends Model
     protected $fillable = [
         'partitura_id',
         'estante_id',
+        'instrumento',
         'cantidad',
         'cantidad_disponible',
         'estado',

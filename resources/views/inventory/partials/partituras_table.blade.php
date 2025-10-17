@@ -6,6 +6,7 @@
                 <th>Autor</th>
                 <th>Tipo de Contribución</th>
                 <th>Año</th>
+                <th>Instrumentos</th>
                 <th>Cantidad</th>
                 <th>Gaveta</th>
                 <th>Acciones</th>

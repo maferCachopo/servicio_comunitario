@@ -4,6 +4,7 @@
             <tr>
                 <th>Usuario</th>
                 <th>Obra</th>
+                <th>Instrumento</th>
                 <th>Fecha Préstamo</th>
                 <th>Fecha Devolución</th>
                 <th>Estado</th>

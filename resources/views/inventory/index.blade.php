@@ -96,12 +96,13 @@ $(document).ready(function() {
                 { data: 'autor', name: 'autor' },
                 { data: 'tipo_contribucion', name: 'tipo_contribucion' },
                 { data: 'anio', name: 'anio' },
+                { data: 'instrumento', name: 'instrumento' },
                 { data: 'cantidad', name: 'cantidad' },
                 { data: 'gaveta', name: 'gaveta' },
                 { data: 'acciones', name: 'acciones', orderable: false, searchable: false }
             ],
             language: {
-                url: "//cdn.datatables.net/plug-ins/1.13.7/i18n/es-ES.json"
+                url: "https://cdn.datatables.net/plug-ins/1.13.7/i18n/es-ES.json"
             },
             dom: 'Bfrtip',
             buttons: [
@@ -138,13 +139,14 @@ $(document).ready(function() {
             columns: [
                 { data: 'usuario_nombre', name: 'usuario_nombre' },
                 { data: 'obra_titulo', name: 'obra_titulo' },
+                { data: 'instrumento', name: 'instrumento' },
                 { data: 'fecha_prestamo', name: 'fecha_prestamo' },
                 { data: 'fecha_devolucion', name: 'fecha_devolucion' },
                 { data: 'estado', name: 'estado' },
                 { data: 'acciones', name: 'acciones', orderable: false, searchable: false }
             ],
             language: {
-                url: "//cdn.datatables.net/plug-ins/1.13.7/i18n/es-ES.json"
+                url: "https://cdn.datatables.net/plug-ins/1.13.7/i18n/es-ES.json"
             },
             dom: 'Bfrtip',
             buttons: [
