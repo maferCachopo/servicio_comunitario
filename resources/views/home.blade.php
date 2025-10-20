@@ -23,6 +23,18 @@
                     @else
                         {{ __('You are logged in!') }}
                     @endif
+
+                    {{-- Notificación de préstamos pendientes para administradores --}}
+                    @if(Auth::check() && Auth::user()->role == 'admin' && $pendingLoansCount > 0)
+                        <div class="alert alert-warning alert-dismissible fade show mt-3" role="alert">
+                            <i class="fas fa-bell me-2"></i>
+                            <strong>¡Atención!</strong> Tienes <strong>{{ $pendingLoansCount }}</strong> solicitudes de préstamo pendientes de revisión.
+                            <a href="{{ route('inventory.index') }}" class="alert-link ms-2">
+                                Ir al panel de inventario <i class="fas fa-arrow-right"></i>
+                            </a>
+                            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                        </div>
+                    @endif
                 </div>
             </div>
         </div>

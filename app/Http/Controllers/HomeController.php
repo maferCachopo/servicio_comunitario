@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
+use App\Models\Prestamo;
 
 class HomeController extends Controller
 {
@@ -23,6 +24,13 @@ class HomeController extends Controller
      */
     public function index()
     {
-        return view('home');
+        $pendingLoansCount = 0;
+        
+        // Check if the authenticated user is an admin
+        if (auth()->check() && auth()->user()->role === 'admin') {
+            $pendingLoansCount = Prestamo::where('estado', 'Pendiente')->count();
+        }
+        
+        return view('home')->with('pendingLoansCount', $pendingLoansCount);
     }
 }

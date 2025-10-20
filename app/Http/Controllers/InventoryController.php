@@ -115,7 +115,14 @@ class InventoryController extends Controller
                 'cantidad' => $inventario->cantidad,
                 'cantidad_disponible' => $inventario->cantidad_disponible,
                 'gaveta' => $inventario->estante ? $inventario->estante->gaveta : 'N/A',
-                'acciones' => '<button class="btn btn-sm btn-secondary" disabled>Acciones</button>'
+                'acciones' => '<button class="btn btn-sm btn-primary edit-inventario-btn"
+                    data-id="' . $inventario->id . '"
+                    data-cantidad="' . $inventario->cantidad . '"
+                    data-cantidad-disponible="' . $inventario->cantidad_disponible . '"
+                    data-estante-id="' . $inventario->estante_id . '"
+                    data-gaveta="' . ($inventario->estante ? $inventario->estante->gaveta : '') . '">
+                    <i class="fas fa-edit"></i> Editar
+                </button>'
             ];
         }
 
@@ -133,7 +140,8 @@ class InventoryController extends Controller
     public function getPrestamosData(Request $request)
     {
         $query = Prestamo::with(['inventario.partitura.obra', 'user'])
-            ->select('prestamos.*');
+            ->select('prestamos.*')
+            ->orderBy('fecha_prestamo', 'desc');
 
         // Búsqueda global
         if ($request->has('search') && $request->search['value']) {
@@ -153,7 +161,7 @@ class InventoryController extends Controller
 
         // Ordenamiento
         if ($request->has('order')) {
-            $columns = ['id', 'obra_titulo', 'instrumento', 'usuario_nombre', 'usuario_email', 'fecha_prestamo', 'descripcion'];
+            $columns = ['id', 'obra_titulo', 'instrumento', 'cantidad', 'usuario_nombre', 'usuario_email', 'fecha_prestamo', 'descripcion'];
             $column = $columns[$request->order[0]['column']] ?? 'id';
             $direction = $request->order[0]['dir'] ?? 'asc';
             
@@ -198,6 +206,7 @@ class InventoryController extends Controller
                 'usuario_nombre' => $usuarioNombre,
                 'usuario_email' => $usuarioEmail,
                 'instrumento' => $instrumento,
+                'cantidad' => $prestamo->cantidad ?? 1,
                 'fecha_prestamo' => \Carbon\Carbon::parse($prestamo->fecha_prestamo)->format('d/m/Y H:i'),
                 'fecha_devolucion' => $prestamo->fecha_devolucion ? \Carbon\Carbon::parse($prestamo->fecha_devolucion)->format('d/m/Y H:i') : 'No devuelto',
                 'estado' => ucfirst($prestamo->estado),
@@ -334,6 +343,62 @@ class InventoryController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'Error al procesar la solicitud'
+            ], 500);
+        }
+    }
+
+    /**
+     * Update inventory record (quantity and location)
+     */
+    public function update(Request $request, $id)
+    {
+        try {
+            // Validate the request
+            $validated = $request->validate([
+                'cantidad' => 'required|integer|min:1',
+                'gaveta' => 'required|string|max:255'
+            ]);
+
+            // Find the inventory record
+            $inventario = Inventario::findOrFail($id);
+
+            // Find or create the estante with the new gaveta
+            $estante = Estante::firstOrCreate(
+                ['gaveta' => trim($validated['gaveta'])],
+                ['gaveta' => trim($validated['gaveta'])]
+            );
+
+            // Update the inventory
+            $inventario->cantidad = $validated['cantidad'];
+            $inventario->estante_id = $estante->id;
+            
+            // Adjust available quantity if total quantity changed
+            $quantityDifference = $validated['cantidad'] - $inventario->getOriginal('cantidad');
+            if ($quantityDifference > 0) {
+                // If total increased, increase available by the same amount
+                $inventario->cantidad_disponible += $quantityDifference;
+            } elseif ($quantityDifference < 0) {
+                // If total decreased, ensure available doesn't exceed total
+                $inventario->cantidad_disponible = min($inventario->cantidad_disponible, $validated['cantidad']);
+            }
+            
+            $inventario->save();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Inventario actualizado exitosamente'
+            ]);
+
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Datos de entrada inválidos',
+                'errors' => $e->errors()
+            ], 422);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al actualizar el inventario: ' . $e->getMessage()
             ], 500);
         }
     }

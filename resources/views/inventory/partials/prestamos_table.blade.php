@@ -5,6 +5,7 @@
                 <th>Usuario</th>
                 <th>Obra</th>
                 <th>Instrumento</th>
+                <th>Cantidad</th>
                 <th>Fecha Préstamo</th>
                 <th>Fecha Devolución</th>
                 <th>Estado</th>

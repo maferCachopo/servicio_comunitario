@@ -5,7 +5,7 @@
     <div class="row justify-content-center">
         <div class="col-md-8">
             <div class="card">
-                <div class="card-header">{{ __('Editar Perfil de Administrador') }}</div>
+                <div class="card-header">{{ __('Editar Perfil') }}</div>
 
                 <div class="card-body">
                     {{-- Mensaje de éxito después de actualizar --}}
@@ -47,6 +47,15 @@
                             <div class="col-md-6">
                                 <input id="email" type="email" class="form-control" value="{{ $user->email }}" disabled>
                                 <small class="form-text text-muted">El email no se puede modificar.</small>
+                            </div>
+                        </div>
+
+                        {{-- Campo para el Rol (solo lectura) --}}
+                        <div class="row mb-3">
+                            <label for="role" class="col-md-4 col-form-label text-md-end">{{ __('Rol') }}</label>
+                            <div class="col-md-6">
+                                <input id="role" type="text" class="form-control" value="{{ ucfirst($user->role) }}" disabled>
+                                <small class="form-text text-muted">El rol no se puede modificar.</small>
                             </div>
                         </div>
 
@@ -96,6 +105,9 @@
                                 <button type="submit" class="btn btn-primary">
                                     {{ __('Guardar Cambios') }}
                                 </button>
+                                <a href="{{ route('profile.show') }}" class="btn btn-secondary ms-2">
+                                    <i class="fas fa-arrow-left me-1"></i> Volver al Perfil
+                                </a>
                             </div>
                         </div>
                     </form>
