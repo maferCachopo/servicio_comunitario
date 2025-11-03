@@ -7,7 +7,7 @@
     <!-- CSRF Token -->
     <meta name="csrf-token" content="{{ csrf_token() }}">
 
-    <title>{{ config('app.name', 'Laravel') }}</title>
+    <title>@yield('title', config('app.name', 'Laravel'))</title>
 
     <!-- Fonts -->
     <link rel="dns-prefetch" href="//fonts.bunny.net">
@@ -18,7 +18,33 @@
 
     <!-- Scripts -->
     @vite(['resources/sass/app.scss', 'resources/js/app.js'])
-    
+
+    @if(Auth::check() && Auth::user()->role == 'admin')
+    <style>
+    .navbar {
+        background-color: #003366 !important;
+    }
+    .navbar-brand, .navbar-nav .nav-link {
+        color: white !important;
+    }
+    .sidebar {
+        background-color: #003366;
+    }
+    </style>
+    @elseif(Auth::check() && Auth::user()->role == 'loan_user')
+    <style>
+    .navbar {
+        background-color: #003366 !important;
+    }
+    .navbar-brand, .navbar-nav .nav-link {
+        color: white !important;
+    }
+    .sidebar {
+        background-color: #003366;
+    }
+    </style>
+    @endif
+
     <!-- DataTables CSS -->
     @stack('styles')
 </head>
@@ -28,7 +54,11 @@
         <nav class="navbar navbar-expand-md navbar-light bg-white shadow-sm">
             <div class="container-fluid"> {{-- Usamos container-fluid para que ocupe todo el ancho --}}
                 <a class="navbar-brand" href="{{ url('/') }}">
-                    {{ config('app.name', 'Laravel') }}
+                    @if(Auth::check() && Auth::user()->role == 'loan_user')
+                        Préstamo de Partituras
+                    @else
+                        @yield('brand', 'Sistema de Inventario')
+                    @endif
                 </a>
                 <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="{{ __('Toggle navigation') }}">
                     <span class="navbar-toggler-icon"></span>

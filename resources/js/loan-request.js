@@ -1,4 +1,5 @@
-const baselink = 'http://127.0.0.1:8000';
+// Este es el único cambio necesario para que apunte al servidor.
+const baselink = 'http://localhost:8050/api/v1';
 class LoanRequestManager {
 
     constructor() {
@@ -92,7 +93,7 @@ class LoanRequestManager {
             
             
 
-            const response = await fetch(`${baselink}/api/partituras-disponibles`, {
+            const response = await fetch(`${baselink}/partituras-disponibles`, {
                 signal: controller.signal,
                 headers: {
                     'Accept': 'application/json',
@@ -338,7 +339,7 @@ class LoanRequestManager {
         }
 
         try {
-            const response = await fetch(`${baselink}/api/solicitar-prestamo`, {
+            const response = await fetch(`${baselink}/solicitar-prestamo`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -373,7 +374,7 @@ class LoanRequestManager {
 
     async loadUserLoanHistory() {
         try {
-            const response = await fetch(`${baselink}/api/mis-prestamos`);
+            const response = await fetch(`${baselink}/mis-prestamos`);
             const data = await response.json();
             
             if (data.success !== false) {

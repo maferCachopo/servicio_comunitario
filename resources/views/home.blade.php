@@ -1,5 +1,19 @@
 @extends('layouts.app')
 
+@push('styles')
+<style>
+@if(Auth::check() && (Auth::user()->role == 'admin' || Auth::user()->role == 'loan_user'))
+.main-content {
+    background-image: url('/storage/unet_fondo.jpg');
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    min-height: 100vh;
+}
+@endif
+</style>
+@endpush
+
 @section('content')
 <div class="container">
     <div class="row justify-content-center">
