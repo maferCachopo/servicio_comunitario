@@ -714,3 +714,6 @@ document.addEventListener('DOMContentLoaded', function() {
         new LoanRequestManager();
     }
 });
+
+
+

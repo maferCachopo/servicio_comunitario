@@ -9,6 +9,7 @@ use App\Models\Inventario;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Http; 
 
 class LoanUserController extends Controller
 {
@@ -33,25 +34,43 @@ class LoanUserController extends Controller
     /**
      * Guarda el nuevo usuario de préstamo en la base de datos.
      */
+   // En LoanUserController.php del CLIENTE
+
     public function store(Request $request)
     {
-        // 1. Validar los datos del formulario
-        $request->validate([
+        // 1. Validar los datos del formulario (esto no cambia)
+        $validated = $request->validate([
             'name' => ['required', 'string', 'max:255'],
-            'email' => ['required', 'string', 'email', 'max:255', 'unique:users'],
+            'email' => ['required', 'string', 'email', 'max:255', 'unique:users,email'], // Valida unicidad localmente para evitar peticiones innecesarias
             'password' => ['required', 'string', 'min:8', 'confirmed'],
         ]);
 
-        // 2. Crear el usuario (el rol por defecto ya es 'loan_user')
-        User::create([
-            'name' => $request->name,
-            'email' => $request->email,
-            'password' => Hash::make($request->password),
+        // 2. Enviar los datos al SERVIDOR
+        $response = Http::post('http://localhost:8050/api/v1/registrar-usuario', [
+            'name' => $validated['name'],
+            'email' => $validated['email'],
+            'password' => $validated['password'], // Enviamos la contraseña en texto plano, el servidor la encriptará
         ]);
 
-        // 3. Redirigir a la lista con un mensaje de éxito
+        // 3. Manejar la respuesta del SERVIDOR
+        if ($response->failed()) {
+            // Si el servidor devolvió un error (ej. 500, o 422 por un email que ya existe allá)
+            return back()->with('error', 'No se pudo crear el usuario en el servidor. Intente de nuevo.')->withInput();
+        }
+        
+        // 4. (Opcional pero recomendado) Crear el usuario también en la base de datos local.
+        // Esto es útil para que el usuario pueda iniciar sesión en el cliente inmediatamente.
+        // Asegúrate de que los datos coincidan.
+        User::create([
+            'name' => $validated['name'],
+            'email' => $validated['email'],
+            'password' => Hash::make($validated['password']),
+            'role' => 'loan_user' // Asignar el rol correcto
+        ]);
+
+        // 5. Redirigir con mensaje de éxito
         return redirect()->route('loan_users.index')
-                         ->with('success', 'Usuario de préstamo creado con éxito.');
+                        ->with('success', 'Usuario de préstamo creado con éxito en ambos sistemas.');
     }
 
     /**
