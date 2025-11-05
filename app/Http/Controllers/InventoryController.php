@@ -12,6 +12,8 @@ use App\Models\User;
 use App\Models\Partitura;
 use App\Models\Estante;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Http;
+
 
 class InventoryController extends Controller
 {
@@ -29,82 +31,19 @@ class InventoryController extends Controller
     public function getPartiturasData(Request $request)
     {
         // Query to get all inventarios with their related data, showing multiple instrumentations per score
-        $query = Inventario::with(['partitura.obra.contribuciones.autor', 'partitura.obra.contribuciones.tipoContribucion', 'estante'])
-            ->select('inventarios.*')
-            ->whereHas('partitura.obra')
-            ->where('cantidad', '>', 0);
 
-        // Búsqueda global
-        if ($request->has('search') && $request->search['value']) {
-            $search = $request->search['value'];
-            $query->where(function($q) use ($search) {
-                // Search in obra data
-                $q->whereHas('partitura.obra', function($q) use ($search) {
-                    $q->where('titulo', 'like', "%{$search}%")
-                      ->orWhere('anio', 'like', "%{$search}%");
-                })
-                  ->orWhereHas('partitura.obra.contribuciones.autor', function($q) use ($search) {
-                      $q->where('nombre', 'like', "%{$search}%")
-                        ->orWhere('apellido', 'like', "%{$search}%");
-                  })
-                  ->orWhereHas('partitura.obra.contribuciones.tipoContribucion', function($q) use ($search) {
-                      $q->where('nombre_contribucion', 'like', "%{$search}%");
-                  })
-                  ->orWhere('instrumento', 'like', "%{$search}%")
-                  ->orWhereHas('estante', function($q) use ($search) {
-                      $q->where('gaveta', 'like', "%{$search}%");
-                  });
-            });
-        }
+        $response = Http::get('http://127.0.0.1:8050/api/v1/partiturasdata')->object();
 
-        // Ordenamiento
-        if ($request->has('order')) {
-            $columns = ['titulo', 'autor', 'tipo_contribucion', 'anio', 'instrumento', 'cantidad', 'gaveta'];
-            $column = $columns[$request->order[0]['column']] ?? 'titulo';
-            $direction = $request->order[0]['dir'] ?? 'asc';
-            
-            if ($column === 'autor') {
-                $query->join('partituras', 'inventarios.partitura_id', '=', 'partituras.id')
-                      ->join('obras', 'partituras.obra_id', '=', 'obras.id')
-                      ->join('contribuciones', 'obras.id', '=', 'contribuciones.obra_id')
-                      ->join('autores', 'contribuciones.autor_id', '=', 'autores.id')
-                      ->orderBy('autores.nombre', $direction)
-                      ->select('inventarios.*');
-            } elseif ($column === 'tipo_contribucion') {
-                $query->join('partituras', 'inventarios.partitura_id', '=', 'partituras.id')
-                      ->join('obras', 'partituras.obra_id', '=', 'obras.id')
-                      ->join('contribuciones', 'obras.id', '=', 'contribuciones.obra_id')
-                      ->join('tipo_contribuciones', 'contribuciones.tipo_contribucion_id', '=', 'tipo_contribuciones.id')
-                      ->orderBy('tipo_contribuciones.nombre_contribucion', $direction)
-                      ->select('inventarios.*');
-            } elseif ($column === 'titulo' || $column === 'anio') {
-                $query->join('partituras', 'inventarios.partitura_id', '=', 'partituras.id')
-                      ->join('obras', 'partituras.obra_id', '=', 'obras.id')
-                      ->orderBy("obras.$column", $direction)
-                      ->select('inventarios.*');
-            } elseif ($column === 'gaveta') {
-                $query->join('estantes', 'inventarios.estante_id', '=', 'estantes.id')
-                      ->orderBy('estantes.gaveta', $direction)
-                      ->select('inventarios.*');
-            } else {
-                $query->orderBy($column, $direction);
-            }
-        }
-
-        $totalRecords = Inventario::where('cantidad', '>', 0)->count();
-        $filteredRecords = $query->count();
-
-        // Paginación
-        $inventarios = $query->skip($request->start ?? 0)
-            ->take($request->length ?? 10)
-            ->get();
+         $inventarios = $response->inventarios;
+        $totalRecords = $response->totalRecords;
+        $filteredRecords = $response->filteredRecords;
 
         // Formatear datos para DataTables - now showing multiple instrumentations per score
         $data = [];
         foreach ($inventarios as $inventario) {
             $obra = $inventario->partitura->obra;
-            $autor = $obra->contribuciones->first()->autor ?? null;
-            $tipoContribucion = $obra->contribuciones->first()->tipoContribucion ?? null;
+            $autor = $obra->contribuciones[0]->autor ?? null;
+            $tipoContribucion = $obra->contribuciones[0]->tipoContribucion ?? null;
             
             $data[] = [
                 'titulo' => $obra->titulo,
