@@ -34,7 +34,7 @@ class InventoryController extends Controller
 
         $response = Http::get('http://127.0.0.1:8050/api/v1/partiturasdata')->object();
 
-         $inventarios = $response->inventarios;
+        $inventarios = $response->inventarios;
         $totalRecords = $response->totalRecords;
         $filteredRecords = $response->filteredRecords;
 
@@ -78,59 +78,12 @@ class InventoryController extends Controller
      */
     public function getPrestamosData(Request $request)
     {
-        $query = Prestamo::with(['inventario.partitura.obra', 'user'])
-            ->select('prestamos.*')
-            ->orderBy('fecha_prestamo', 'desc');
+         $response = Http::get('http://127.0.0.1:8050/api/v1/prestamosdata')->object();
 
-        // Búsqueda global
-        if ($request->has('search') && $request->search['value']) {
-            $search = $request->search['value'];
-            $query->where(function($q) use ($search) {
-                $q->where('id', 'like', "%{$search}%")
-                  ->orWhereHas('inventario.partitura.obra', function($q) use ($search) {
-                      $q->where('titulo', 'like', "%{$search}%");
-                  })
-                  ->orWhereHas('user', function($q) use ($search) {
-                      $q->where('name', 'like', "%{$search}%")
-                        ->orWhere('email', 'like', "%{$search}%");
-                  })
-                  ->orWhere('descripcion', 'like', "%{$search}%");
-            });
-        }
-
-        // Ordenamiento
-        if ($request->has('order')) {
-            $columns = ['id', 'obra_titulo', 'instrumento', 'cantidad', 'usuario_nombre', 'usuario_email', 'fecha_prestamo', 'descripcion'];
-            $column = $columns[$request->order[0]['column']] ?? 'id';
-            $direction = $request->order[0]['dir'] ?? 'asc';
-            
-            if ($column === 'obra_titulo') {
-                $query->join('inventarios', 'prestamos.inventario_id', '=', 'inventarios.id')
-                      ->join('partituras', 'inventarios.partitura_id', '=', 'partituras.id')
-                      ->join('obras', 'partituras.obra_id', '=', 'obras.id')
-                      ->orderBy('obras.titulo', $direction)
-                      ->select('prestamos.*');
-            } elseif ($column === 'instrumento') {
-                $query->join('inventarios', 'prestamos.inventario_id', '=', 'inventarios.id')
-                      ->orderBy('inventarios.instrumento', $direction)
-                      ->select('prestamos.*');
-            } elseif ($column === 'usuario_nombre' || $column === 'usuario_email') {
-                $query->join('users', 'prestamos.user_id', '=', 'users.id')
-                      ->orderBy($column === 'usuario_nombre' ? 'users.name' : 'users.email', $direction)
-                      ->select('prestamos.*');
-            } else {
-                $query->orderBy($column, $direction);
-            }
-        }
-
-        $totalRecords = Prestamo::count();
-        $filteredRecords = $query->count();
-
-        // Paginación
-        $prestamos = $query->skip($request->start ?? 0)
-            ->take($request->length ?? 10)
-            ->get();
-
+        $prestamos = $response->prestamos;
+        $totalRecords = $response->totalRecords;
+        $filteredRecords = $response->filteredRecords;
+         
         // Formatear datos para DataTables
         $data = [];
         foreach ($prestamos as $prestamo) {
@@ -157,7 +110,9 @@ class InventoryController extends Controller
             'draw' => intval($request->draw),
             'recordsTotal' => $totalRecords,
             'recordsFiltered' => $filteredRecords,
-            'data' => $data
+            'data' => $data,
+            'Cosa1' => $response->Cosa1,
+            'Cosa2' => $request
         ]);
     }
 
@@ -298,35 +253,10 @@ class InventoryController extends Controller
                 'gaveta' => 'required|string|max:255'
             ]);
 
-            // Find the inventory record
-            $inventario = Inventario::findOrFail($id);
-
-            // Find or create the estante with the new gaveta
-            $estante = Estante::firstOrCreate(
-                ['gaveta' => trim($validated['gaveta'])],
-                ['gaveta' => trim($validated['gaveta'])]
-            );
-
-            // Update the inventory
-            $inventario->cantidad = $validated['cantidad'];
-            $inventario->estante_id = $estante->id;
-            
-            // Adjust available quantity if total quantity changed
-            $quantityDifference = $validated['cantidad'] - $inventario->getOriginal('cantidad');
-            if ($quantityDifference > 0) {
-                // If total increased, increase available by the same amount
-                $inventario->cantidad_disponible += $quantityDifference;
-            } elseif ($quantityDifference < 0) {
-                // If total decreased, ensure available doesn't exceed total
-                $inventario->cantidad_disponible = min($inventario->cantidad_disponible, $validated['cantidad']);
-            }
-            
-            $inventario->save();
-
-            return response()->json([
-                'success' => true,
-                'message' => 'Inventario actualizado exitosamente'
-            ]);
+            return $response = Http::withHeaders([
+               'Content-Type' => 'application/json',
+                'Accept' => 'application/json',
+                    ])->put('http://127.0.0.1:8050/api/v1/prestamosupdate/'.$id, $validated)->json();
 
         } catch (\Illuminate\Validation\ValidationException $e) {
             return response()->json([

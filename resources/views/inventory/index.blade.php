@@ -105,10 +105,12 @@ $(document).ready(function() {
                 url: "https://cdn.datatables.net/plug-ins/1.13.7/i18n/es-ES.json"
             },
             dom: 'Bfrtip',
+            paging: false,
             buttons: [
                 'excel', 'pdf', 'print'
             ],
             responsive: true,
+
             initComplete: function() {
                 console.log('Partituras DataTable initialized successfully');
             }
@@ -153,6 +155,7 @@ $(document).ready(function() {
             buttons: [
                 'excel', 'pdf', 'print'
             ],
+            paging: false,
             responsive: true,
             initComplete: function() {
                 console.log('Prestamos DataTable initialized successfully');

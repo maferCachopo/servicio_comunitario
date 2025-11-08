@@ -28,8 +28,12 @@ Route::middleware('auth')->group(function () {
 
      // RUTA PARA INVENTARIO (solo admin)
      Route::get('/inventory', [InventoryController::class, 'index'])->name('inventory.index')->middleware('admin');
-
      Route::get('/inventory/prestamos-data', [InventoryController::class, 'getPrestamosData'])->name('inventory.prestamos.data')->middleware('admin');
+     Route::get('/inventory/partituras-data', [InventoryController::class, 'getPartiturasData'])->name('inventory.partituras.data')->middleware('admin');
+
+     Route::get('/home', [App\Http\Controllers\HomeController::class, 'index'])->name('home')->middleware('admin');
+
+    
     // RUTA PARA ACTUALIZAR INVENTARIO (PUT)
      Route::put('/inventory/{id}', [InventoryController::class, 'update'])->name('inventory.update')->middleware('admin');
 
@@ -57,6 +61,4 @@ Route::get('/debug-loan', function() {
     return view('debug.loan_test');
 })->name('debug.loan');
 
-     Route::get('/inventory/partituras-data', [InventoryController::class, 'getPartiturasData'])->name('inventory.partituras.data');
 
-Route::get('/home', [App\Http\Controllers\HomeController::class, 'index'])->name('home');
