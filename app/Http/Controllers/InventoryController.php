@@ -88,7 +88,7 @@ class InventoryController extends Controller
                 'tipo_contribucion' => $listaTiposContribucion,
                 'anio' => $obra->anio ?? 'N/A',
                 // Corregido: Usar la variable $partitura que definimos arriba
-                'instrumento' => 'ID: ' . ($partitura->instrumento_id ?? 'N/A'),
+                'instrumento' => $partitura->instrumento->nombre ?? 'N/A',
                 // Corregido: 'Cantidad' debe ser con 'C' mayúscula como en el JSON
                 'cantidad' => $inventario->Cantidad ?? 0,
                 'cantidad_disponible' => 'N/A', // Este dato no viene en el JSON
