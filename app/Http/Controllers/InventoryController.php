@@ -117,46 +117,68 @@ class InventoryController extends Controller
 
         /**
          * Obtiene datos para DataTables - Historial de Préstamos.
-         */
-        public function getPrestamosData(Request $request)
-        {
-            $response = Http::get('http://127.0.0.1:8050/api/v1/prestamosdata')->object();
+            */
+    public function getPrestamosData(Request $request)
+    {
+        // Pasamos los parámetros de DataTables (búsqueda, orden, etc.) a la API
+        $response = Http::get('http://127.0.0.1:8050/api/v1/prestamosdata', $request->all())->object();
 
-            $prestamos = $response->prestamos;
-            $totalRecords = $response->totalRecords;
-            $filteredRecords = $response->filteredRecords;
-            
-            // Formatear datos para DataTables
-            $data = [];
-            foreach ($prestamos as $prestamo) {
-                $obraTitulo = $prestamo->inventario->partitura->obra->titulo ?? 'N/A';
-                $usuarioNombre = $prestamo->user->name ?? 'N/A';
-                $usuarioEmail = $prestamo->user->email ?? 'N/A';
-                $instrumento = $prestamo->inventario->instrumento ?? 'N/A';
-                
-                $data[] = [
-                    'id' => $prestamo->id,
-                    'obra_titulo' => $obraTitulo,
-                    'usuario_nombre' => $usuarioNombre,
-                    'usuario_email' => $usuarioEmail,
-                    'instrumento' => $instrumento,
-                    'cantidad' => $prestamo->cantidad ?? 1,
-                    'fecha_prestamo' => \Carbon\Carbon::parse($prestamo->fecha_prestamo)->format('d/m/Y H:i'),
-                    'fecha_devolucion' => $prestamo->fecha_devolucion ? \Carbon\Carbon::parse($prestamo->fecha_devolucion)->format('d/m/Y H:i') : 'No devuelto',
-                    'estado' => ucfirst($prestamo->estado),
-                    'descripcion' => $prestamo->descripcion ?? 'Sin descripción'
-                ];
-            }
-
+        if (!isset($response->prestamos)) {
             return response()->json([
                 'draw' => intval($request->draw),
-                'recordsTotal' => $totalRecords,
-                'recordsFiltered' => $filteredRecords,
-                'data' => $data,
-                'Cosa1' => $response->Cosa1,
-                'Cosa2' => $request
+                'recordsTotal' => 0,
+                'recordsFiltered' => 0,
+                'data' => []
             ]);
         }
+
+        $prestamos = $response->prestamos;
+        $totalRecords = $response->totalRecords;
+        $filteredRecords = $response->filteredRecords;
+        
+        // Formatear datos para DataTables
+        $data = [];
+        foreach ($prestamos as $prestamo) {
+            
+            // --- INICIO DE CORRECCIONES ---
+            // Accedemos a los datos usando las rutas correctas del JSON
+            
+            $obraTitulo = $prestamo->partitura->obra->titulo ?? 'N/A';
+            $instrumento = $prestamo->partitura->instrumento->nombre ?? 'N/A';
+            
+            // NOTA: Laravel convierte el nombre de la relación 'Usuario_Inventario' a 'usuario__inventario' en el JSON.
+            $usuario = $prestamo->usuario__inventario ?? null;
+            $usuarioNombre = $usuario->nombre ?? 'N/A';
+            $usuarioEmail = $usuario->correo ?? 'N/A'; // Tu JSON usa 'correo'
+            
+            $data[] = [
+                'id' => $prestamo->id,
+                'obra_titulo' => $obraTitulo,
+                'usuario_nombre' => $usuarioNombre,
+                'usuario_email' => $usuarioEmail,
+                'instrumento' => $instrumento,
+                'cantidad' => $prestamo->cantidad ?? 1,
+                // Usamos 'created_at' como la fecha del préstamo
+                'fecha_prestamo' => \Carbon\Carbon::parse($prestamo->created_at)->format('d/m/Y H:i'),
+                // La lógica para la fecha de devolución ya estaba bien, solo necesitaba los datos correctos
+                'fecha_devolucion' => $prestamo->fecha_devolucion 
+                                        ? \Carbon\Carbon::parse($prestamo->fecha_devolucion)->format('d/m/Y H:i') 
+                                        : 'No devuelto',
+                'estado' => ucfirst($prestamo->estado),
+                'descripcion' => $prestamo->descripcion ?? 'Sin descripción',
+                'acciones' => '<button class="btn btn-sm btn-info view-btn" data-id="'.$prestamo->id.'">Ver</button>' // Ejemplo
+            ];
+            
+            // --- FIN DE CORRECCIONES ---
+        }
+
+        return response()->json([
+            'draw' => intval($request->draw),
+            'recordsTotal' => $totalRecords,
+            'recordsFiltered' => $filteredRecords,
+            'data' => $data,
+        ]);
+    }
 
     /**
      * API: Get pending loan requests for admin
