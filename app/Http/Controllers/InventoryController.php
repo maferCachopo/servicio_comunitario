@@ -30,41 +30,83 @@ class InventoryController extends Controller
      */
     public function getPartiturasData(Request $request)
     {
-        // Query to get all inventarios with their related data, showing multiple instrumentations per score
-
+        // 1. Realizar la petición a la API y decodificar la respuesta a un objeto PHP
         $response = Http::get('http://127.0.0.1:8050/api/v1/partiturasdata')->object();
+        
+        // Si la respuesta no tiene la estructura esperada, devolvemos una respuesta vacía para evitar errores
+        if (!isset($response->inventarios)) {
+            return response()->json([
+                'draw' => intval($request->draw),
+                'recordsTotal' => 0,
+                'recordsFiltered' => 0,
+                'data' => []
+            ]);
+        }
 
+        // 2. Extraer los datos principales de la respuesta
         $inventarios = $response->inventarios;
         $totalRecords = $response->totalRecords;
         $filteredRecords = $response->filteredRecords;
 
-        // Formatear datos para DataTables - now showing multiple instrumentations per score
+        // 3. Formatear los datos para que DataTables los entienda
         $data = [];
         foreach ($inventarios as $inventario) {
-            $obra = $inventario->partitura->obra;
-            $autor = $obra->contribuciones[0]->autor ?? null;
-            $tipoContribucion = $obra->contribuciones[0]->tipoContribucion ?? null;
             
+            // --- INICIO DE CORRECCIONES ---
+
+            // A. Definir variables para los objetos anidados. Esto soluciona los errores de "Undefined variable".
+            $partitura = $inventario->partitura;
+            $obra = $partitura->obra;
+            $estante = $inventario->estante;
+
+            // B. Procesar el array de "contribuciones" para obtener TODOS los autores y sus roles.
+            $autores = [];
+            $tiposContribucion = [];
+            if (!empty($obra->contribuciones)) {
+                foreach ($obra->contribuciones as $contribucion) {
+                    // Añadir el nombre del autor si existe
+                    if (isset($contribucion->autor->nombre)) {
+                        $autores[] = $contribucion->autor->nombre;
+                    }
+                    // Añadir el tipo de contribución si existe
+                    if (isset($contribucion->tipo_contribucion->nombre_contribucion)) {
+                        $tiposContribucion[] = $contribucion->tipo_contribucion->nombre_contribucion;
+                    }
+                }
+            }
+
+            // C. Crear las variables $listaAutores y $listaTiposContribucion. Esto soluciona el error original.
+            $listaAutores = !empty($autores) ? implode(', ', $autores) : 'N/A';
+            $listaTiposContribucion = !empty($tiposContribucion) ? implode(', ', $tiposContribucion) : 'N/A';
+
+            // --- FIN DE CORRECCIONES ---
+
+            // D. Construir el array de datos usando las variables correctas
             $data[] = [
-                'titulo' => $obra->titulo,
-                'autor' => $autor ? $autor->nombre . ' ' . $autor->apellido : 'N/A',
-                'tipo_contribucion' => $tipoContribucion ? $tipoContribucion->nombre_contribucion : 'N/A',
-                'anio' => $obra->anio,
-                'instrumento' => $inventario->instrumento ?? 'N/A',
-                'cantidad' => $inventario->cantidad,
-                'cantidad_disponible' => $inventario->cantidad_disponible,
-                'gaveta' => $inventario->estante ? $inventario->estante->gaveta : 'N/A',
+                'titulo' => $obra->titulo ?? 'N/A',
+                'autor' => $listaAutores,
+                'tipo_contribucion' => $listaTiposContribucion,
+                'anio' => $obra->anio ?? 'N/A',
+                // Corregido: Usar la variable $partitura que definimos arriba
+                'instrumento' => 'ID: ' . ($partitura->instrumento_id ?? 'N/A'),
+                // Corregido: 'Cantidad' debe ser con 'C' mayúscula como en el JSON
+                'cantidad' => $inventario->Cantidad ?? 0,
+                'cantidad_disponible' => 'N/A', // Este dato no viene en el JSON
+                // Corregido: Usar la variable $estante que definimos arriba
+                'gaveta' => $estante->gaveta ?? 'N/A',
+                // Corregido: Usar $estante también en el botón
                 'acciones' => '<button class="btn btn-sm btn-primary edit-inventario-btn"
-                    data-id="' . $inventario->id . '"
-                    data-cantidad="' . $inventario->cantidad . '"
-                    data-cantidad-disponible="' . $inventario->cantidad_disponible . '"
+                    data-partitura-id="' . $inventario->partitura_id . '" 
                     data-estante-id="' . $inventario->estante_id . '"
-                    data-gaveta="' . ($inventario->estante ? $inventario->estante->gaveta : '') . '">
+                    data-cantidad="' . ($inventario->Cantidad ?? 0) . '"
+                    data-cantidad-disponible="N/A"
+                    data-gaveta="' . ($estante->gaveta ?? '') . '">
                     <i class="fas fa-edit"></i> Editar
                 </button>'
             ];
         }
 
+        // 4. Devolver la respuesta en el formato que espera DataTables
         return response()->json([
             'draw' => intval($request->draw),
             'recordsTotal' => $totalRecords,
@@ -73,48 +115,48 @@ class InventoryController extends Controller
         ]);
     }
 
-    /**
-     * Obtiene datos para DataTables - Historial de Préstamos.
-     */
-    public function getPrestamosData(Request $request)
-    {
-         $response = Http::get('http://127.0.0.1:8050/api/v1/prestamosdata')->object();
+        /**
+         * Obtiene datos para DataTables - Historial de Préstamos.
+         */
+        public function getPrestamosData(Request $request)
+        {
+            $response = Http::get('http://127.0.0.1:8050/api/v1/prestamosdata')->object();
 
-        $prestamos = $response->prestamos;
-        $totalRecords = $response->totalRecords;
-        $filteredRecords = $response->filteredRecords;
-         
-        // Formatear datos para DataTables
-        $data = [];
-        foreach ($prestamos as $prestamo) {
-            $obraTitulo = $prestamo->inventario->partitura->obra->titulo ?? 'N/A';
-            $usuarioNombre = $prestamo->user->name ?? 'N/A';
-            $usuarioEmail = $prestamo->user->email ?? 'N/A';
-            $instrumento = $prestamo->inventario->instrumento ?? 'N/A';
+            $prestamos = $response->prestamos;
+            $totalRecords = $response->totalRecords;
+            $filteredRecords = $response->filteredRecords;
             
-            $data[] = [
-                'id' => $prestamo->id,
-                'obra_titulo' => $obraTitulo,
-                'usuario_nombre' => $usuarioNombre,
-                'usuario_email' => $usuarioEmail,
-                'instrumento' => $instrumento,
-                'cantidad' => $prestamo->cantidad ?? 1,
-                'fecha_prestamo' => \Carbon\Carbon::parse($prestamo->fecha_prestamo)->format('d/m/Y H:i'),
-                'fecha_devolucion' => $prestamo->fecha_devolucion ? \Carbon\Carbon::parse($prestamo->fecha_devolucion)->format('d/m/Y H:i') : 'No devuelto',
-                'estado' => ucfirst($prestamo->estado),
-                'descripcion' => $prestamo->descripcion ?? 'Sin descripción'
-            ];
-        }
+            // Formatear datos para DataTables
+            $data = [];
+            foreach ($prestamos as $prestamo) {
+                $obraTitulo = $prestamo->inventario->partitura->obra->titulo ?? 'N/A';
+                $usuarioNombre = $prestamo->user->name ?? 'N/A';
+                $usuarioEmail = $prestamo->user->email ?? 'N/A';
+                $instrumento = $prestamo->inventario->instrumento ?? 'N/A';
+                
+                $data[] = [
+                    'id' => $prestamo->id,
+                    'obra_titulo' => $obraTitulo,
+                    'usuario_nombre' => $usuarioNombre,
+                    'usuario_email' => $usuarioEmail,
+                    'instrumento' => $instrumento,
+                    'cantidad' => $prestamo->cantidad ?? 1,
+                    'fecha_prestamo' => \Carbon\Carbon::parse($prestamo->fecha_prestamo)->format('d/m/Y H:i'),
+                    'fecha_devolucion' => $prestamo->fecha_devolucion ? \Carbon\Carbon::parse($prestamo->fecha_devolucion)->format('d/m/Y H:i') : 'No devuelto',
+                    'estado' => ucfirst($prestamo->estado),
+                    'descripcion' => $prestamo->descripcion ?? 'Sin descripción'
+                ];
+            }
 
-        return response()->json([
-            'draw' => intval($request->draw),
-            'recordsTotal' => $totalRecords,
-            'recordsFiltered' => $filteredRecords,
-            'data' => $data,
-            'Cosa1' => $response->Cosa1,
-            'Cosa2' => $request
-        ]);
-    }
+            return response()->json([
+                'draw' => intval($request->draw),
+                'recordsTotal' => $totalRecords,
+                'recordsFiltered' => $filteredRecords,
+                'data' => $data,
+                'Cosa1' => $response->Cosa1,
+                'Cosa2' => $request
+            ]);
+        }
 
     /**
      * API: Get pending loan requests for admin
