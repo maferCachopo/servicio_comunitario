@@ -308,30 +308,46 @@ class InventoryController extends Controller
     /**
      * Update inventory record (quantity and location)
      */
-    public function update(Request $request, $id)
+    public function update(Request $request, int $partitura_id, int $estante_id_original)
     {
         try {
-            // Validate the request
+            // 1. Validar los datos que vienen del formulario del cliente. Esto está bien.
             $validated = $request->validate([
-                'cantidad' => 'required|integer|min:1',
-                'gaveta' => 'required|string|max:255'
+                'cantidad' => 'required|integer|min:0', // min:0 por si se quiere vaciar
+                'gaveta'   => 'required|string|max:255'
             ]);
 
-            return $response = Http::withHeaders([
-               'Content-Type' => 'application/json',
-                'Accept' => 'application/json',
-                    ])->put('http://127.0.0.1:8050/api/v1/prestamosupdate/'.$id, $validated)->json();
+            // 2. Construir la URL correcta para la API del servidor.
+            // Usamos los parámetros recibidos en la función.
+            $apiUrl = "http://127.0.0.1:8050/api/v1/inventario/{$partitura_id}/{$estante_id_original}";
 
-        } catch (\Illuminate\Validation\ValidationException $e) {
+            // 3. Realizar la llamada PUT a la API del servidor.
+            $response = Http::withHeaders([
+               'Content-Type' => 'application/json',
+               'Accept' => 'application/json',
+            ])->put($apiUrl, $validated); // Enviamos los datos validados en el cuerpo.
+
+            // 4. Devolver la respuesta de la API al frontend del cliente.
+            // Es buena práctica verificar si la llamada fue exitosa.
+            if ($response->successful()) {
+                return $response->json();
+            }
+
+            // Si la API devolvió un error (ej. 404, 500), lo reenviamos.
+            return response()->json($response->json(), $response->status());
+
+        } catch (ValidationException $e) {
+            // Error de validación en el cliente
             return response()->json([
                 'success' => false,
                 'message' => 'Datos de entrada inválidos',
                 'errors' => $e->errors()
             ], 422);
         } catch (\Exception $e) {
+            // Cualquier otro error (ej. la API no está disponible)
             return response()->json([
                 'success' => false,
-                'message' => 'Error al actualizar el inventario: ' . $e->getMessage()
+                'message' => 'Error al comunicarse con el servicio de inventario: ' . $e->getMessage()
             ], 500);
         }
     }

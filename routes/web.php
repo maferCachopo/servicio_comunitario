@@ -35,7 +35,7 @@ Route::middleware('auth')->group(function () {
 
     
     // RUTA PARA ACTUALIZAR INVENTARIO (PUT)
-     Route::put('/inventory/{id}', [InventoryController::class, 'update'])->name('inventory.update')->middleware('admin');
+     Route::put('/inventory/{partitura_id}/{estante_id_original}', [InventoryController::class, 'update'])->name('inventory.update')->middleware('admin');
 
      // API Routes for Loan System
      Route::prefix('api')->group(function () {

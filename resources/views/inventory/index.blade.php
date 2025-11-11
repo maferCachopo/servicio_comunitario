@@ -224,28 +224,31 @@ $(document).ready(function() {
     // Handle edit inventory button clicks
     $(document).on('click', '.edit-inventario-btn', function() {
         const btn = $(this);
-        const id = btn.data('id');
-        const cantidad = btn.data('cantidad');
-        const cantidadDisponible = btn.data('cantidad-disponible');
+        
+        // Obtenemos los datos del botón
+        const partituraId = btn.data('partitura-id');
         const estanteId = btn.data('estante-id');
+        const cantidad = btn.data('cantidad');
         const gaveta = btn.data('gaveta');
 
-        // Populate modal fields
-        $('#editInventarioId').val(id);
+        // Llenamos los campos del modal
+        $('#editPartituraId').val(partituraId);
+        $('#editEstanteIdOriginal').val(estanteId);
         $('#editCantidad').val(cantidad);
-        $('#editCantidadDisponible').val(cantidadDisponible);
         $('#editGaveta').val(gaveta);
 
-        // Show modal
+        // Mostramos el modal
         $('#editInventarioModal').modal('show');
     });
-
     // Handle form submission
     $('#editInventarioForm').on('submit', function(e) {
         e.preventDefault();
 
         const form = $(this);
-        const id = $('#editInventarioId').val();
+        
+        const partituraId = $('#editPartituraId').val();
+        const estanteIdOriginal = $('#editEstanteIdOriginal').val();
+
         const cantidad = $('#editCantidad').val();
         const gaveta = $('#editGaveta').val();
 
@@ -260,9 +263,11 @@ $(document).ready(function() {
             return;
         }
 
+        const url = `inventory/${partituraId}/${estanteIdOriginal}`;
+
         // AJAX request
         $.ajax({
-            url: `inventory/${id}`,
+            url: url,
             method: 'PUT',
             data: {
                 cantidad: cantidad,
@@ -309,7 +314,8 @@ $(document).ready(function() {
             </div>
             <div class="modal-body">
                 <form id="editInventarioForm">
-                    <input type="hidden" id="editInventarioId" name="id">
+                    <input type="hidden" id="editPartituraId">
+                    <input type="hidden" id="editEstanteIdOriginal">
                     
                     <div class="mb-3">
                         <label for="editCantidad" class="form-label">Cantidad Total</label>
