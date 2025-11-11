@@ -25,7 +25,6 @@ class LoginController extends Controller
      *
      * @var string
      */
-    protected $redirectTo = '/home';
 
     /**
      * Create a new controller instance.
@@ -36,5 +35,19 @@ class LoginController extends Controller
     {
         $this->middleware('guest')->except('logout');
         $this->middleware('auth')->only('logout');
+    }
+
+    protected function redirectTo()
+    {
+        if (auth()->user()->role == 'admin') {
+            // Si es admin, lo mandamos al dashboard de admin
+            return route('home'); 
+        } elseif (auth()->user()->role == 'loan_user') {
+            // Si es un usuario de préstamo, lo mandamos a la página de solicitar préstamos
+            return route('loan.request'); 
+        }
+
+        // Como fallback, si hay otros roles, los mandamos a una ruta genérica
+        return '/'; 
     }
 }

@@ -21,8 +21,7 @@ class CheckAdmin
             // Si es admin, déjalo continuar con su petición
             return $next($request);
         }
-
-        // Si no es admin, redirígelo a su 'home' con un mensaje de error.
-        return redirect('/home')->with('error', 'No tienes permiso para acceder a esta sección.');
+        
+        return redirect()->route('loan.request')->with('error', 'No tienes permiso para acceder a esta sección.');
     }
 }

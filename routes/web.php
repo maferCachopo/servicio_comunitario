@@ -4,6 +4,7 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\LoanUserController;
 use App\Http\Controllers\InventoryController;
+use App\Http\Controllers\HomeController;
 
 Route::get('/', function () {
      return redirect()->route('login');
@@ -30,10 +31,7 @@ Route::middleware('auth')->group(function () {
      Route::get('/inventory', [InventoryController::class, 'index'])->name('inventory.index')->middleware('admin');
      Route::get('/inventory/prestamos-data', [InventoryController::class, 'getPrestamosData'])->name('inventory.prestamos.data')->middleware('admin');
      Route::get('/inventory/partituras-data', [InventoryController::class, 'getPartiturasData'])->name('inventory.partituras.data')->middleware('admin');
-
-     Route::get('/home', [App\Http\Controllers\HomeController::class, 'index'])->name('home')->middleware('admin');
-
-    
+     Route::get('/home', [HomeController::class, 'index'])->name('home')->middleware('admin'); 
     // RUTA PARA ACTUALIZAR INVENTARIO (PUT)
      Route::put('/inventory/{partitura_id}/{estante_id_original}', [InventoryController::class, 'update'])->name('inventory.update')->middleware('admin');
 
