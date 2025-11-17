@@ -383,24 +383,27 @@ class LoanRequestManager {
         }
     }
 
-    async loadUserLoanHistory() {
-        try {
-            const response = await fetch('/api/mis-prestamos', {
-            headers: { 'Accept': 'application/json' },
-            credentials: 'same-origin'
-        });
-            const data = await response.json();
-            
-            if (data.success !== false) {
-                this.renderLoanHistory(data.prestamos || []);
-            } else {
-                this.showError('Error al cargar historial de préstamos');
-            }
-        } catch (error) {
-            console.error('Error loading loan history:', error);
-            this.showError('Error al cargar historial');
-        }
+async loadUserLoanHistory() {
+  try {
+    const resp = await fetch('/api/mis-prestamos', {
+      headers: { 'Accept': 'application/json' },
+      credentials: 'same-origin'
+    });
+
+    const data = await resp.json();
+
+    if (!resp.ok || data.success === false) {
+      this.showError(data.message || 'Error al cargar historial de préstamos');
+      return;
     }
+
+    // El backend ya devuelve [{ obra_titulo, cantidad_solicitada, estado }]
+    this.renderLoanHistory(data.prestamos || []);
+  } catch (error) {
+    console.error('Error loading loan history:', error);
+    this.showError('Error al cargar historial');
+  }
+}
 
     renderLoanHistory(prestamos) {
         const container = document.getElementById('userLoanHistory');

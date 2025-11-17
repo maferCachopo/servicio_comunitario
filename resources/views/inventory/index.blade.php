@@ -117,6 +117,22 @@ $(document).ready(function() {
         });
     }
 
+function asDate(val) {
+  if (!val) return '—';
+  if (typeof val === 'string') {
+    const m = val.match(/^(\d{4}-\d{2}-\d{2})/); // toma "YYYY-MM-DD" del ISO o "YYYY-MM-DD HH:MM:SS"
+    if (m) return m[1];
+  }
+  const d = new Date(val);
+  if (!isNaN(d)) {
+    const dd = String(d.getDate()).padStart(2,'0');
+    const mm = String(d.getMonth()+1).padStart(2,'0');
+    const yy = d.getFullYear();
+    return `${yy}-${mm}-${dd}`; // o `${dd}/${mm}/${yy}` si prefieres
+  }
+  return '—';
+}
+    
     // Function to initialize Prestamos DataTable
 function initPrestamosTable() {
   if (prestamosTable) return; // Already initialized
@@ -132,25 +148,45 @@ function initPrestamosTable() {
   prestamosTable = $tbl.DataTable({
     processing: true,
     serverSide: true,
-    ajax: {
-      url: "{{ route('inventory.prestamos.data') }}",
-      type: 'GET',
-      headers: {
-        'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
-      },
-      error: function(xhr) {
-        console.error('Prestamos DataTables AJAX Error:', xhr.status, xhr.responseText);
-        alert('Error loading prestamos data: ' + xhr.status + ' - ' + xhr.responseText);
-      }
-    },
+ajax: {
+  url: 'http://127.0.0.1:8050/api/v1/prestamosdata',  
+  type: 'GET',
+  headers: { 'Accept': 'application/json' },
+  // Si tu endpoint remoto devuelve { data: [...] } lo usamos;
+  // si devuelve { prestamos: [...] } lo transformamos aquí al shape esperado:
+  dataSrc: function (resp) {
+    if (resp && Array.isArray(resp.data)) {
+      return resp.data;
+    }
+    if (resp && Array.isArray(resp.prestamos)) {
+      return resp.prestamos.map(p => ({
+        user_name:      (p.usuario__inventario?.nombre) || (p.usuario_inventario?.nombre) || '—',
+        obra_titulo:    p.obra_titulo || p.partitura?.obra?.titulo || '—',
+        descripcion:    p.descripcion || '',
+        cantidad:       p.cantidad ?? 1,
+        fecha_prestamo: p.fecha_prestamo || p.created_at || null,
+        fecha_devolucion: p.fecha_devolucion || null,
+        estado:         p.estado || 'Pendiente',
+        acciones:       `<button class="btn btn-sm btn-info view-btn" data-id="${p.id}">Devolver</button>`
+      }));
+    }
+    return [];
+  },
+  error: function(xhr){
+    console.error('Prestamos DataTables AJAX Error:', xhr.status, xhr.responseText);
+    alert('Error loading prestamos data: ' + xhr.status + ' - ' + xhr.responseText);
+  }
+},
     // 👇 Claves alineadas con tu endpoint local
     columns: [
       { data: 'user_name',        name: 'user_name' },
       { data: 'obra_titulo',   name: 'obra_titulo', defaultContent: '—' },
       { data: 'descripcion',      name: 'descripcion' },
       { data: 'cantidad',         name: 'cantidad' },
-      { data: 'fecha_prestamo',   name: 'fecha_prestamo' },
-      { data: 'fecha_devolucion', name: 'fecha_devolucion' },
+      { data: 'fecha_prestamo',   name: 'fecha_prestamo',
+        render: (d)=> asDate(d)  },
+      { data: 'fecha_devolucion', name: 'fecha_devolucion',
+        render: (d)=> d ? asDate(d) : 'No devuelto' },
       { data: 'estado',           name: 'estado' },
       { data: 'acciones',         name: 'acciones', orderable: false, searchable: false }
     ],

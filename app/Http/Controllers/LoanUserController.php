@@ -207,111 +207,127 @@ class LoanUserController extends Controller
         }
     }*/
 
-    public function solicitarPrestamo(Request $request)
+public function solicitarPrestamo(Request $request)
 {
-    // 1) Leer y validar el payload del JS
+    // 1) Validar lo que llega del front
     $v = $request->validate([
         'partitura_id' => 'required|integer',
         'instrumento'  => 'required|string|max:255',
         'cantidad'     => 'required|integer|min:1',
-        'titulo'       => 'nullable|string|max:255',
+        'titulo'       => 'nullable|string|max:255', // viene del front como 'titulo'
+        'email'        => 'nullable|email',          // si no viene, usamos el del auth
     ]);
 
+    $user  = Auth::user();
+    $email = $request->input('email', $user?->email);
+    if (!$email) {
+        return response()->json([
+            'success' => false,
+            'message' => 'No se pudo determinar el email del usuario.'
+        ], 422);
+    }
 
-    $user = Auth::user();
-
-    // 2) Construir el payload remoto (desde servidor)
-    $remotePayload = [
-        'email'        => $user->email,                 // o tu usuario_inventario_id mapeado
+    // 2) Armar payload para CONSULTA con TODOS los campos
+    $obraTitulo = $request->input('titulo'); // ya te llega del front
+    $payload = [
+        'email'        => $email,
         'partitura_id' => (int) $v['partitura_id'],
         'instrumento'  => (string) $v['instrumento'],
         'cantidad'     => (int) $v['cantidad'],
+
+        // nuevos (consulta los guardará):
+        'obra_titulo'      => $obraTitulo,                      // título de la obra
+        'titulo'           => $obraTitulo,                      // compat
+        'fecha_prestamo'   => now()->format('Y-m-d H:i:s'),     // o ISO si prefieres
+        'fecha_devolucion' => null,                             // inicio sin devolución
+        'estado'           => 'Pendiente',
     ];
 
-    // 3) Llamar a consulta
-    $response = Http::acceptJson()->post('http://localhost:8050/api/v1/solicitar-prestamo', $remotePayload);
-    if ($response->failed()) {
-        return response()->json(['success'=>false,'message'=>'No se pudo crear el préstamo en consulta'], 502);
+    // 3) Enviar a CONSULTA (sin crear espejo local)
+    try {
+        $resp = Http::acceptJson()
+            ->post('http://localhost:8050/api/v1/solicitar-prestamo', $payload);
+    } catch (\Throwable $e) {
+        \Log::error('Error llamando a consulta: '.$e->getMessage());
+        return response()->json([
+            'success' => false,
+            'message' => 'Servidor de consulta no disponible.'
+        ], 502);
     }
 
-    $inventarioId = \App\Models\Inventario::where('partitura_id', $request->partitura_id)
-    ->where('instrumento', $request->instrumento)
-    ->value('id');
+    if ($resp->failed()) {
+        return response()->json([
+            'success' => false,
+            'message' => $resp->json('message') ?? 'Error en servidor de consulta',
+            'errors'  => $resp->json('errors') ?? null,
+        ], $resp->status());
+    }
 
-    // Título de la obra (preferir lo que manda el front)
-    $obraTitulo = $request->input('titulo')                          // 👈 PRIMERO 'titulo'
-               ?? $request->input('obra_titulo')
-               ?? $request->input('nombre_de_partitura');
-
-    if (!$obraTitulo) {
-            try {
-                $obj = Http::get('http://127.0.0.1:8050/api/v1/partiturasdata')->object();
-                if ($obj && isset($obj->inventarios)) {
-                    foreach ($obj->inventarios as $inv) {
-                        $pid = $inv->partitura_id ?? ($inv->partitura->id ?? null);
-                        if ((int)$pid === (int)$v['partitura_id']) {
-                            $obraTitulo = $inv->partitura->obra->titulo ?? ($inv->obra->titulo ?? null);
-                            break;
-                        }
-                    }   
-                }
-            } catch (\Throwable $e) {
-                // silencioso: si falla, queda null y no rompe
-            }
-        }
-
-    // Fallback al placeholder 1 (asegúrate de que ese inventario exista en DB)
-    $inventarioId = $inventarioId ?: 1;
-    
-    Prestamo::create([
-        'inventario_id'    => $inventarioId,
-        'partitura_id'     => (int) $request->partitura_id, // ← referencia “blanda” a consulta
-        'user_id'          => auth()->id(),
-        'cantidad'         => (int) $request->cantidad,
-
-        'estado'           => 'Pendiente',
-        'fecha_prestamo'   => now(),
-        'fecha_devolucion' => null,
-        'descripcion'      => "Solicitud de préstamo para instrumento {$request->instrumento}",
-        'obra_titulo'      => $obraTitulo,
-    ]);
-
-    return response()->json(['success'=>true,'message'=>'OK'], 201);
+    return response()->json([
+        'success'  => true,
+        'message'  => $resp->json('message') ?? 'Préstamo creado en consulta',
+        'prestamo' => $resp->json('prestamo') ?? null,
+    ], 201);
 }
     /**
      * API: Get user's loan history
      */
 public function misPrestamos()
 {
+    
     $user = Auth::user();
     if (!$user) {
         return response()->json(['success' => false, 'message' => 'Unauthenticated'], 401);
     }
 
-    $rows = Prestamo::where('user_id', $user->id)
-        // evita ordenar por una columna que pueda venir inválida
-        ->orderByDesc('created_at')
-        ->get();
+    try {
+        // Llamada a CONSULTA (server-side, sin CORS en el navegador)
+        $resp = Http::acceptJson()->get('http://127.0.0.1:8050/api/v1/prestamosdata');
+    } catch (\Throwable $e) {
+        \Log::error('consulta/prestamosdata error: '.$e->getMessage());
+        return response()->json([
+            'success' => false,
+            'message' => 'Servidor de consulta no disponible.'
+        ], 502);
+    }
 
-    $prestamos = $rows->map(function ($p) {
+    if ($resp->failed()) {
+        return response()->json([
+            'success' => false,
+            'message' => $resp->json('message') ?? 'Error en servidor de consulta'
+        ], $resp->status());
+    }
 
-        // Título: usa el campo local; si no, intenta extraerlo de la descripción
-        $titulo = $p->obra_titulo;
-        if (!$titulo && $p->descripcion) {
-            $titulo = preg_replace('/^Solicitud de pr(é|e)stamo para\s*/iu', '', $p->descripcion);
-        }
+    $raw  = $resp->json();
+    $rows = $raw['prestamos'] ?? $raw['data'] ?? [];
+
+    // Filtrar por el email del usuario autenticado
+    $mine = array_values(array_filter($rows, function ($p) use ($user) {
+        $u = $p['usuario__inventario'] ?? $p['usuario_inventario'] ?? null;
+        $correo = $u['correo'] ?? $u['email'] ?? null;
+        return $correo && strcasecmp($correo, $user->email) === 0;
+    }));
+
+    // Adaptar a las 3 columnas que renderiza tu front
+    $prestamos = array_map(function ($p) {
+        $obra = $p['obra_titulo'] ?? ($p['partitura']['obra']['titulo'] ?? 'N/A');
+        $cantidad = isset($p['cantidad'])
+            ? (int)$p['cantidad']
+            : (isset($p['cantidad_solicitada']) ? (int)$p['cantidad_solicitada'] : 1);
+        $estado = ucfirst($p['estado'] ?? 'Pendiente');
 
         return [
-            'obra_titulo'         => $titulo ?: 'N/A',
-            'cantidad_solicitada' => (int)($p->cantidad ?? 1),
-            'estado'              => ucfirst($p->estado ?? 'Pendiente'),
+            'obra_titulo'         => $obra,
+            'cantidad_solicitada' => $cantidad,
+            'estado'              => $estado,
         ];
-    });
+    }, $mine);
 
     return response()->json([
         'success'   => true,
         'prestamos' => $prestamos,
     ]);
 }
+
 
 }
