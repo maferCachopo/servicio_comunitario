@@ -1,61 +1,41 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# Community Service Management System - UNET 🏫
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+A robust desktop application developed as part of my **Computer Engineering** degree at the Universidad Nacional Experimental del Táchira (UNET). This system automates the administration, tracking, and validation of community service projects for university students.
 
-## About Laravel
+## 🎯 Project Overview
+The software provides a centralized platform for managing the lifecycle of community service, from initial student registration to the final validation of completed hours. It replaces manual spreadsheet tracking with a structured, database-driven solution.
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+## 🛠️ Technical Stack
+- **Language:** C# (.NET Framework).
+- **Architecture:** Model-View-Controller (MVC) for clear separation of concerns.
+- **Data Persistence:** Entity Framework with SQL Server for relational data management.
+- **UI/UX:** Windows Forms (WinForms) with custom styling for an intuitive administrative dashboard.
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+## 🚀 Core Functionalities
+- **Student & Tutor Management:** Full CRUD (Create, Read, Update, Delete) operations for managing participant profiles.
+- **Project Tracking:** Real-time monitoring of project status, assigned hours, and institutional partners.
+- **Automated Reporting:** Generates performance summaries and compliance documents for academic departments.
+- **Data Validation:** Built-in logic to ensure data integrity and prevent scheduling conflicts.
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+## 📁 Project Structure
+Based on the repository's architecture:
+- `Models/`: Data structures and database context definitions.
+- `Views/`: User interface components and form designs.
+- `Controllers/`: Business logic and communication between UI and Data layers.
 
-## Learning Laravel
+## ⚙️ Setup and Installation
+1. Clone the repository: 
+   `git clone https://github.com/maferCachopo/servicio_comunitario.git`
+2. Open the `.sln` file in **Visual Studio 2022** (or later).
+3. Restore NuGet packages.
+4. Update the connection string in `App.config` to point to your local SQL Server instance.
+5. Build and run (F5).
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework.
+## 🧠 Engineering Insights
+This project served as a deep dive into:
+- **Relational Database Design:** Normalizing data to handle complex relationships between students, projects, and hours.
+- **Design Patterns:** Implementing MVC to ensure the code is maintainable and scalable.
+- **Asynchronous Programming:** Managing data operations without freezing the UI.
 
-You may also try the [Laravel Bootcamp](https://bootcamp.laravel.com), where you will be guided through building a modern Laravel application from scratch.
-
-If you don't feel like reading, [Laracasts](https://laracasts.com) can help. Laracasts contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
-
-## Laravel Sponsors
-
-We would like to extend our thanks to the following sponsors for funding Laravel development. If you are interested in becoming a sponsor, please visit the [Laravel Partners program](https://partners.laravel.com).
-
-### Premium Partners
-
-- **[Vehikl](https://vehikl.com)**
-- **[Tighten Co.](https://tighten.co)**
-- **[Kirschbaum Development Group](https://kirschbaumdevelopment.com)**
-- **[64 Robots](https://64robots.com)**
-- **[Curotec](https://www.curotec.com/services/technologies/laravel)**
-- **[DevSquad](https://devsquad.com/hire-laravel-developers)**
-- **[Redberry](https://redberry.international/laravel-development)**
-- **[Active Logic](https://activelogic.com)**
-
-## Contributing
-
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
-
-## Code of Conduct
-
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
-
-## Security Vulnerabilities
-
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
-
-## License
-
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+---
+**Maria Fernanda Cachopo Rojas** *Computer Engineering Student | Full Stack Developer* 📫 [mafecaro2000@gmail.com](mailto:mafecaro2000@gmail.com) | [LinkedIn Profile]
