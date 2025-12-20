@@ -1,41 +1,47 @@
-# Community Service Management System - UNET 🏫
+# Music Score Inventory & Loan System 🎼
 
-A robust desktop application developed as part of my **Computer Engineering** degree at the Universidad Nacional Experimental del Táchira (UNET). This system automates the administration, tracking, and validation of community service projects for university students.
+A specialized web application developed to manage the physical sheet music library of a musical institution. This system was designed to solve the common problem of lost materials by implementing a rigorous digital control over physical loans and inventory status.
 
 ## 🎯 Project Overview
-The software provides a centralized platform for managing the lifecycle of community service, from initial student registration to the final validation of completed hours. It replaces manual spreadsheet tracking with a structured, database-driven solution.
+In large orchestras or music schools, losing physical scores is a significant financial and academic loss. This system automates the "check-out" and "check-in" process, providing real-time visibility into who possesses specific materials and their expected return dates.
 
 ## 🛠️ Technical Stack
-- **Language:** C# (.NET Framework).
-- **Architecture:** Model-View-Controller (MVC) for clear separation of concerns.
-- **Data Persistence:** Entity Framework with SQL Server for relational data management.
-- **UI/UX:** Windows Forms (WinForms) with custom styling for an intuitive administrative dashboard.
+- **Framework:** Laravel (PHP).
+- **Frontend:** Blade Templating Engine + Bootstrap (or Tailwind) for responsive design.
+- **Database:** MySQL/PostgreSQL (Relational schema for inventory tracking).
+- **Tools:** Composer, Artisan CLI.
 
 ## 🚀 Core Functionalities
-- **Student & Tutor Management:** Full CRUD (Create, Read, Update, Delete) operations for managing participant profiles.
-- **Project Tracking:** Real-time monitoring of project status, assigned hours, and institutional partners.
-- **Automated Reporting:** Generates performance summaries and compliance documents for academic departments.
-- **Data Validation:** Built-in logic to ensure data integrity and prevent scheduling conflicts.
+- **Sheet Music Catalog:** Detailed database of scores, including composer, genre, arrangement type, and physical location.
+- **Loan Management System:** Track active loans, historical data of users, and pending returns.
+- **User Roles:** Administrative access for librarians and view-only/request access for musicians.
+- **Status Tracking:** Real-time availability updates (Available, Loaned, Damaged, Lost).
+- **Automated Alerts:** (Optional/Planned) System to flag overdue materials.
 
-## 📁 Project Structure
-Based on the repository's architecture:
-- `Models/`: Data structures and database context definitions.
-- `Views/`: User interface components and form designs.
-- `Controllers/`: Business logic and communication between UI and Data layers.
+## 📁 Key Technical Implementations
+- **Eloquent ORM:** Leveraged for complex relationships between `Scores`, `Users`, and `Loans`.
+- **Migrations & Seeders:** Structured database versioning for consistent development environments.
+- **Validation Logic:** Backend rules to prevent the loan of already-out materials.
 
 ## ⚙️ Setup and Installation
 1. Clone the repository: 
    `git clone https://github.com/maferCachopo/servicio_comunitario.git`
-2. Open the `.sln` file in **Visual Studio 2022** (or later).
-3. Restore NuGet packages.
-4. Update the connection string in `App.config` to point to your local SQL Server instance.
-5. Build and run (F5).
+2. Install dependencies:
+   `composer install`
+3. Configure your environment:
+   - Copy `.env.example` to `.env`.
+   - Setup your database credentials.
+4. Generate App Key & Migrate:
+   `php artisan key:generate`
+   `php artisan migrate`
+5. Run the server:
+   `php artisan serve`
 
 ## 🧠 Engineering Insights
-This project served as a deep dive into:
-- **Relational Database Design:** Normalizing data to handle complex relationships between students, projects, and hours.
-- **Design Patterns:** Implementing MVC to ensure the code is maintainable and scalable.
-- **Asynchronous Programming:** Managing data operations without freezing the UI.
+This project demonstrates my ability to:
+- Translate a real-world organizational problem into a **Relational Database Model**.
+- Utilize **Laravel's MVC architecture** to build a scalable and maintainable tool.
+- Bridge the gap between **Musical Administration** and **Software Engineering**.
 
 ---
-**Maria Fernanda Cachopo Rojas** *Computer Engineering Student | Full Stack Developer* 📫 [mafecaro2000@gmail.com](mailto:mafecaro2000@gmail.com) | [LinkedIn Profile]
+**Maria Fernanda Cachopo Rojas** *Computer Engineering Student | Full Stack Developer* 📫 [mafecaro2000@gmail.com](mailto:mafecaro2000@gmail.com)
