@@ -1,47 +1,113 @@
 # Music Score Inventory & Loan System 🎼
 
-A specialized web application developed to manage the physical sheet music library of a musical institution. This system was designed to solve the common problem of lost materials by implementing a rigorous digital control over physical loans and inventory status.
+A web application to manage the **physical sheet-music library** of a musical institution (orchestra / music school). Librarians keep a catalog of works, scores and the shelves where they are stored, and musicians request scores on loan from their own account — so the institution always knows who has each score and how many copies are left.
 
-## 🎯 Project Overview
-In large orchestras or music schools, losing physical scores is a significant financial and academic loss. This system automates the "check-out" and "check-in" process, providing real-time visibility into who possesses specific materials and their expected return dates.
+Built as a **community service project** (*servicio comunitario*) with Laravel 12.
 
-## 🛠️ Technical Stack
-- **Framework:** Laravel (PHP).
-- **Frontend:** Blade Templating Engine + Bootstrap (or Tailwind) for responsive design.
-- **Database:** MySQL/PostgreSQL (Relational schema for inventory tracking).
-- **Tools:** Composer, Artisan CLI.
+![Loan users](docs/screenshots/02-usuarios-prestamo.png)
 
-## 🚀 Core Functionalities
-- **Sheet Music Catalog:** Detailed database of scores, including composer, genre, arrangement type, and physical location.
-- **Loan Management System:** Track active loans, historical data of users, and pending returns.
-- **User Roles:** Administrative access for librarians and view-only/request access for musicians.
-- **Status Tracking:** Real-time availability updates (Available, Loaned, Damaged, Lost).
-- **Automated Alerts:** (Optional/Planned) System to flag overdue materials.
+## ✨ Features
 
-## 📁 Key Technical Implementations
-- **Eloquent ORM:** Leveraged for complex relationships between `Scores`, `Users`, and `Loans`.
-- **Migrations & Seeders:** Structured database versioning for consistent development environments.
-- **Validation Logic:** Backend rules to prevent the loan of already-out materials.
+- **Two roles with separate areas**
+  - **Admin (librarian):** manages loan users, inventory and loan requests.
+  - **Loan user (musician):** sees available scores, requests loans and checks their own loan history.
+- **Role-based access** with a custom `CheckAdmin` middleware and role-aware redirect after login.
+- **Catalog model** covering the real structure of a music library:
+  works (`Obra`), authors (`Autor`) and their contribution type (composer, arranger…), scores (`Partitura`), shelves (`Estante`), inventory per instrument (`Inventario`) and loans (`Prestamo`).
+- **Inventory with quantities per instrument and shelf**, with a unique constraint to avoid duplicate entries.
+- **Loan workflow:** musicians request a score + instrument + quantity; admins approve or reject pending requests.
+- **Inventory tables with search and export** to Excel, PDF and print.
+- **User profile** with photo, editable data and role badge.
+- Registration and password reset are disabled — accounts are created by the admin.
 
-## ⚙️ Setup and Installation
-1. Clone the repository: 
-   `git clone https://github.com/maferCachopo/servicio_comunitario.git`
-2. Install dependencies:
-   `composer install`
-3. Configure your environment:
-   - Copy `.env.example` to `.env`.
-   - Setup your database credentials.
-4. Generate App Key & Migrate:
-   `php artisan key:generate`
-   `php artisan migrate`
-5. Run the server:
-   `php artisan serve`
+## 📸 Screenshots
 
-## 🧠 Engineering Insights
-This project demonstrates my ability to:
-- Translate a real-world organizational problem into a **Relational Database Model**.
-- Utilize **Laravel's MVC architecture** to build a scalable and maintainable tool.
-- Bridge the gap between **Musical Administration** and **Software Engineering**.
+| Login | Create loan user |
+|---|---|
+| ![Login](docs/screenshots/01-login.png) | ![Create user](docs/screenshots/03-crear-usuario.png) |
+| **Loan users (admin)** | **Musician profile** |
+| ![Loan users](docs/screenshots/02-usuarios-prestamo.png) | ![Profile](docs/screenshots/04-perfil-musico.png) |
 
----
-**Maria Fernanda Cachopo Rojas** *Computer Engineering Student | Full Stack Developer* 📫 [mafecaro2000@gmail.com](mailto:mafecaro2000@gmail.com)
+> Screenshots use the demo data from the seeders.
+
+## 🛠️ Tech Stack
+
+- **Backend:** PHP 8.2+, Laravel 12, Eloquent ORM, Laravel UI (auth scaffolding)
+- **Frontend:** Blade, Bootstrap 5, Sass, Vite, vanilla JS
+- **Database:** SQLite by default (MySQL / PostgreSQL supported through `.env`)
+- **Tooling:** Composer, Artisan, migrations & seeders, PHPUnit
+
+## 🗄️ Data Model
+
+```
+Autor ──< Contribucion >── Obra ──< Partitura ──< Inventario >── Estante
+                │                                     │
+        TipoContribucion                          Prestamo >── User (role: admin | loan_user)
+```
+
+- An **Obra** (work) can have several authors, each with a **TipoContribucion** (composer, arranger, lyricist…).
+- A **Partitura** (score) belongs to a work; its copies live in **Inventario** rows, one per instrument and **Estante** (shelf), with a quantity.
+- A **Prestamo** (loan) links a user to an inventory item with a quantity and a status.
+
+## 🚀 Getting Started
+
+**Requirements:** PHP 8.2+ (extensions: `pdo_sqlite`, `mbstring`, `openssl`, `fileinfo`), Composer, Node.js 18+.
+
+```bash
+git clone https://github.com/maferCachopo/servicio_comunitario.git
+cd servicio_comunitario
+
+composer install
+npm install
+npm run build
+
+cp .env.example .env          # Windows: copy .env.example .env
+php artisan key:generate
+```
+
+Create the SQLite database and load the demo data:
+
+```bash
+# macOS / Linux
+touch database/database.sqlite
+# Windows (PowerShell)
+New-Item database/database.sqlite
+
+php artisan migrate --seed
+php artisan serve
+```
+
+Open <http://127.0.0.1:8000>.
+
+### Demo account
+
+| Role | Email | Password |
+|---|---|---|
+| Admin | `admin@example.com` | `123456` |
+
+The seeders also create sample authors, works, scores, inventory and loan users.
+
+### External inventory API
+
+The inventory tables, the loan-request form and the creation of loan users call a companion REST API at `http://127.0.0.1:8050/api/v1` (see `app/Http/Controllers/InventoryController.php`, `LoanUserController.php` and `resources/js/loan-request.js`). That service is **not included in this repository**; without it those screens load without data. Login, the loan-user list, profiles and role-based navigation work on their own.
+
+## 📁 Project Structure
+
+```
+app/
+├── Http/Controllers/   HomeController, InventoryController, LoanUserController, ProfileController, Auth/
+├── Http/Middleware/    CheckAdmin (admin-only routes)
+└── Models/             Autor, Contribucion, Estante, Inventario, Obra, Partitura, Prestamo, TipoContribucion, User
+database/
+├── migrations/         Library schema (authors, works, scores, shelves, inventory, loans)
+└── seeders/            Admin user + demo catalog
+resources/
+├── views/              Blade views (auth, inventory, loan_users, loan_request, profile)
+└── js/loan-request.js  Loan request modal and history
+routes/web.php          Web routes + internal JSON endpoints
+```
+
+## 👤 Author
+
+**María Fernanda Cachopo Rojas** — Computer Engineering student · Full Stack Developer
+📫 [mafecaro2000@gmail.com](mailto:mafecaro2000@gmail.com)
